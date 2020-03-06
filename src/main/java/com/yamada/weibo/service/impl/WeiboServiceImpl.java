@@ -6,6 +6,7 @@ import com.yamada.weibo.dto.CommentCountDTO;
 import com.yamada.weibo.dto.ForwardCountDTO;
 import com.yamada.weibo.dto.WeiboLikeDTO;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.WeiboStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.*;
 import com.yamada.weibo.pojo.*;
@@ -35,6 +36,9 @@ public class WeiboServiceImpl implements WeiboService {
     private CommentMapper commentMapper;
 
     @Resource
+    private CommentLikeMapper commentLikeMapper;
+
+    @Resource
     private WeiboLikeMapper weiboLikeMapper;
 
     @Resource
@@ -53,14 +57,22 @@ public class WeiboServiceImpl implements WeiboService {
         List<Follow> followList = followMapper.selectList(wrapper1);
         if (followList.size() > 0) {
             List<Integer> followUidList = followList.stream().map(Follow::getFollowUid).collect(Collectors.toList());
+            // 添加自己的UID
+            followUidList.add(uid);
             // 查询这些用户的微博
             QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
             wrapper2.in("uid", followUidList).orderByDesc("create_time");
             PageHelper.startPage(page, size);
             List<Weibo> weiboList = weiboMapper.selectList(wrapper2);
             if (weiboList.size() > 0) {
+                // 获取转发的base微博
+                List<Integer> forwardWidList = weiboList.stream().filter(e -> e.getStatus().equals(WeiboStatus.FORWARD.getCode()))
+                        .map(Weibo::getBaseForwardWid).collect(Collectors.toList());
+                List<Weibo> list4 = weiboMapper.selectBatchIds(forwardWidList);
+                Map<Integer, Weibo> map4 = list4.stream().collect(Collectors.toMap(Weibo::getWid, e -> e));
                 // 获得微博作者的用户姓名和头像
-                Map<Integer, User> userMap = getUserMap(weiboList);
+                list4.addAll(weiboList);
+                Map<Integer, User> userMap = getUserMap(list4);
                 // 获取转发数
                 StringJoiner sj = new StringJoiner(",");
                 for (Weibo weibo : weiboList) {
@@ -73,7 +85,7 @@ public class WeiboServiceImpl implements WeiboService {
                 List<CommentCountDTO> list2 = commentMapper.commentCountByWid(widList);
                 Map<Integer, CommentCountDTO> map2 = list2.stream().collect(Collectors.toMap(CommentCountDTO::getWid, e -> e));
                 // 获取点赞数和是否点赞
-                List<WeiboLikeDTO> list3 = weiboLikeMapper.getWeiboLikeDTOByWidAndUid(uid, widList);
+                List<WeiboLikeDTO> list3 = weiboLikeMapper.weiboLikeDTOListByWidAndUid(uid, widList);
                 Map<Integer, WeiboLikeDTO> map3 = list3.stream().collect(Collectors.toMap(WeiboLikeDTO::getWid, e -> e));
                 // 转换为VO
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -91,12 +103,24 @@ public class WeiboServiceImpl implements WeiboService {
                     User user = userMap.get(weibo.getUid());
                     weiboVO.setName(user.getName());
                     weiboVO.setAvatar(user.getAvatar());
-                    //设置转发数
+                    //设置转发数、评论数、点赞数、是否点赞
                     weiboVO.setForwardCount(map1.get(wid).getForwardCount());
                     weiboVO.setCommentCount(map2.get(wid).getCommentCount());
                     weiboVO.setLikeCount(map3.get(wid).getLikeCount());
                     weiboVO.setIsLike(map3.get(wid).getIsLike());
-
+                    // 设置转发的base微博
+                    if (weibo.getStatus().equals(WeiboStatus.FORWARD.getCode())) {
+                        Weibo w = map4.get(weibo.getBaseForwardWid());
+                        if (w != null) {
+                            weiboVO.setForwardUsername(userMap.get(w.getUid()).getName());
+                            weiboVO.setForwardAvatar(userMap.get(w.getUid()).getAvatar());
+                            weiboVO.setForwardContent(w.getContent());
+                            if (w.getImages() != null) {
+                                String[] split = w.getImages().split(",");
+                                weiboVO.setForwardImageList(Arrays.asList(split));
+                            }
+                        }
+                    }
                     weiboVOList.add(weiboVO);
                 }
             }
@@ -124,10 +148,34 @@ public class WeiboServiceImpl implements WeiboService {
         // 设置评论
         PageHelper.startPage(1, 10);
         weiboVO.setCommentVOList(getCommentByWid(wid, "like_count"));
+        // 获取总转发数
+        QueryWrapper<Forward> wrapper1 = new QueryWrapper<>();
+        wrapper1.eq("forward_wid", wid);
+        weiboVO.setForwardCount(forwardMapper.selectCount(wrapper1));
         // 获取总评论数
         QueryWrapper<Comment> wrapper = new QueryWrapper<>();
         wrapper.eq("wid", wid);
         weiboVO.setCommentCount(commentMapper.selectCount(wrapper));
+        // 获取点赞数和是否点赞
+        Integer uid = ServletUtil.getUid();
+        WeiboLikeDTO weiboLikeDTO = weiboLikeMapper.weiboLikeDTOByWidAndUid(uid, wid);
+        weiboVO.setLikeCount(weiboLikeDTO.getLikeCount());
+        weiboVO.setIsLike(weiboLikeDTO.getIsLike());
+        // 如果是转发微博，设置转发的base微博
+        if (weibo.getStatus().equals(WeiboStatus.FORWARD.getCode())) {
+            Weibo forwardWeibo = weiboMapper.selectById(weibo.getBaseForwardWid());
+            if (forwardWeibo != null) {
+                User forwardUser = userMapper.selectById(forwardWeibo.getUid());
+                weiboVO.setForwardUsername(forwardUser.getName());
+                weiboVO.setForwardAvatar(forwardUser.getAvatar());
+                weiboVO.setForwardContent(forwardWeibo.getContent());
+                if (forwardWeibo.getImages() != null) {
+                    String[] split = forwardWeibo.getImages().split(",");
+                    weiboVO.setForwardImageList(Arrays.asList(split));
+                }
+            }
+        }
+
         return weiboVO;
     }
 
@@ -189,19 +237,22 @@ public class WeiboServiceImpl implements WeiboService {
         for (CommentVO commentVO : commentList1) {
             sj.add(String.valueOf(commentVO.getCid()));
         }
-        // 设置名称、头像
         List<CommentVO> commentList2 = commentMapper.getLevel2ByCidList(sj.toString(), uid);
+        // 设置名称、头像
         uidList.addAll(commentList2.stream().map(CommentVO::getUid).collect(Collectors.toList()));
         List<User> userList = userMapper.selectBatchIds(uidList);
         Map<Integer, User> userMap = userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
         // 合并两层评论
         Map<Integer, CommentVO> map = commentList1.stream().collect(Collectors.toMap(CommentVO::getCid, e -> e));
         for (CommentVO comment : commentList1) {
-            Integer cid = comment.getCid();
-            comment.setName(userMap.get(cid).getName());
-            comment.setAvatar(userMap.get(cid).getAvatar());
+            Integer id = comment.getUid();
+            comment.setName(userMap.get(id).getName());
+            comment.setAvatar(userMap.get(id).getAvatar());
         }
         for (CommentVO comment : commentList2) {
+            //加入名字
+            comment.setName(userMap.get(comment.getUid()).getName());
+
             Integer cid = comment.getCommentCid();
             map.get(cid).addComment(comment);
         }
@@ -217,5 +268,33 @@ public class WeiboServiceImpl implements WeiboService {
         List<Integer> uidList = weiboList.stream().map(Weibo::getUid).collect(Collectors.toList());
         List<User> userList = userMapper.selectBatchIds(uidList);
         return userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
+    }
+
+    @Override
+    public void delete(Integer wid) {
+        Weibo weibo = weiboMapper.selectById(wid);
+        if (weibo == null) {
+            throw new MyException(ResultEnum.WEIBO_NOT_EXIST);
+        }
+        Integer uid = ServletUtil.getUid();
+        if (!weibo.getUid().equals(uid)) {
+            throw new MyException(ResultEnum.NOT_AUTH);
+        }
+        int result = weiboMapper.deleteById(wid);
+        if (result == 0) {
+            throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
+        QueryWrapper<WeiboLike> wrapper1 = new QueryWrapper<>();
+        wrapper1.eq("wid", wid);
+        weiboLikeMapper.delete(wrapper1);
+        // 删除评论
+        QueryWrapper<Comment> wrapper2 = new QueryWrapper<>();
+        wrapper2.eq("wid", wid);
+        List<Comment> commentList = commentMapper.selectList(wrapper2);
+        List<Integer> cidList = commentList.stream().map(Comment::getCid).collect(Collectors.toList());
+        commentMapper.delete(wrapper2);
+        QueryWrapper<CommentLike> wrapper3 = new QueryWrapper<>();
+        wrapper3.in("cid", cidList);
+        commentLikeMapper.delete(wrapper3);
     }
 }

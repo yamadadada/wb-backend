@@ -17,10 +17,10 @@ public class Date2StringSerializer extends JsonSerializer<Date> {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         if (calendar.get(Calendar.YEAR) == year) {
-            SimpleDateFormat sdf = new SimpleDateFormat("M-dd H:mm");
+            SimpleDateFormat sdf = new SimpleDateFormat("M-d H:mm");
             jsonGenerator.writeString(sdf.format(date));
         } else {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-M-dd H:mm");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-M-d H:mm");
             jsonGenerator.writeString(sdf.format(date));
         }
     }

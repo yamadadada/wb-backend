@@ -21,5 +21,12 @@ public interface WeiboLikeMapper extends BaseMapper<WeiboLike> {
             "FROM `weibo` left join `weibo_like` on `weibo`.wid=`weibo_like`.wid " +
             "where `weibo`.wid in (${widList}) " +
             "group by `weibo`.wid")
-    List<WeiboLikeDTO> getWeiboLikeDTOByWidAndUid(@Param("uid") Integer uid, @Param("widList") String widList);
+    List<WeiboLikeDTO> weiboLikeDTOListByWidAndUid(@Param("uid") Integer uid, @Param("widList") String widList);
+
+    @Select("SELECT `weibo`.wid, count(`weibo_like`.wid) like_count, " +
+            "(case `weibo_like`.uid when ${uid} then 'true' else 'false' end) is_like " +
+            "FROM `weibo` left join `weibo_like` on `weibo`.wid=`weibo_like`.wid " +
+            "where `weibo`.wid=#{wid} " +
+            "group by `weibo`.wid")
+    WeiboLikeDTO weiboLikeDTOByWidAndUid(@Param("uid") Integer uid, @Param("wid") Integer wid);
 }

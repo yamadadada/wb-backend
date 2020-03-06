@@ -17,4 +17,6 @@ public interface WeiboService {
     Map<String, Object> getWeiboComment(Integer wid, String sort);
 
     List<WeiboLikeVO> getWeiboLike(Integer wid);
+
+    void delete(Integer wid);
 }

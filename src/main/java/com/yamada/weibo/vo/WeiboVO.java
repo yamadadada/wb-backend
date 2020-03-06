@@ -20,6 +20,14 @@ public class WeiboVO {
 
     private Integer baseForwardWid;
 
+    private String forwardUsername;
+
+    private String forwardAvatar;
+
+    private String forwardContent;
+
+    private List<String> forwardImageList;
+
     private List<String> imageList;
 
     @JsonSerialize(using = Date2StringSerializer.class)

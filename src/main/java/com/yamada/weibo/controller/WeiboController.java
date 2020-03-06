@@ -61,7 +61,7 @@ public class WeiboController {
         List<WeiboVO> weiboVOList = weiboService.getWeiboForward(wid);
         Map<String, Object> map = new HashMap<>();
         map.put("forwardList", weiboVOList);
-        map.put("forwardCount", new PageInfo<>().getTotal());
+        map.put("forwardCount", new PageInfo<>(weiboVOList).getTotal());
         return ResultUtil.success(map);
     }
 
@@ -97,5 +97,11 @@ public class WeiboController {
         map.put("weiboLikeVOList", weiboLikeVOList);
         map.put("likeCount", new PageInfo<>(weiboLikeVOList).getTotal());
         return ResultUtil.success(map);
+    }
+
+    @DeleteMapping("/{wid}")
+    public Object delete(@PathVariable("wid") Integer wid) {
+        weiboService.delete(wid);
+        return ResultUtil.success(null);
     }
 }

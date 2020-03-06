@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ResultEnum {
+    NOT_AUTH(-7, "你没有权限进行这个操作"),
     COMMENT_NOT_EXIST(-6, "该评论不存在"),
     WEIBO_NOT_EXIST(-5, "该微博不存在"),
     OPERATE_ERROR(-4, "操作失败，请稍后再试"),

@@ -1,9 +1,14 @@
 package com.yamada.weibo.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.yamada.weibo.enums.CommentType;
 import com.yamada.weibo.enums.ResultEnum;
 import com.yamada.weibo.exception.MyException;
+import com.yamada.weibo.mapper.CommentLikeMapper;
 import com.yamada.weibo.mapper.CommentMapper;
 import com.yamada.weibo.mapper.UserMapper;
+import com.yamada.weibo.pojo.Comment;
+import com.yamada.weibo.pojo.CommentLike;
 import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.service.CommentService;
 import com.yamada.weibo.utils.ServletUtil;
@@ -23,6 +28,9 @@ public class CommentServiceImpl implements CommentService {
 
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private CommentLikeMapper commentLikeMapper;
 
     @Override
     public CommentVO getByCid(Integer cid) {
@@ -51,10 +59,47 @@ public class CommentServiceImpl implements CommentService {
         List<User> userList = userMapper.selectBatchIds(uidList);
         Map<Integer, User> map = userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
         for (CommentVO commentVO : commentVOList) {
-            Integer id = commentVO.getCid();
+            Integer id = commentVO.getUid();
             commentVO.setName(map.get(id).getName());
             commentVO.setAvatar(map.get(id).getAvatar());
         }
         return commentVOList;
+    }
+
+    @Override
+    public void add(Comment comment) {
+        comment.setUid(ServletUtil.getUid());
+        if (comment.getCommentCid() != null) {
+            comment.setCommentType(CommentType.LEVEL2.getCode());
+        } else {
+            comment.setCommentType(CommentType.LEVEL1.getCode());
+        }
+        int result = commentMapper.insert(comment);
+        if (result == 0) {
+            throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
+    }
+
+    @Override
+    public void delete(Integer cid) {
+        Integer uid = ServletUtil.getUid();
+        Comment comment = commentMapper.selectById(cid);
+        if (comment == null) {
+            throw new MyException(ResultEnum.COMMENT_NOT_EXIST);
+        }
+        if (!comment.getUid().equals(uid)) {
+            throw new MyException(ResultEnum.NOT_AUTH);
+        }
+        // 删除两层评论
+        QueryWrapper<Comment> wrapper = new QueryWrapper<>();
+        wrapper.eq("cid", cid).or().eq("comment_cid", cid);
+        int result = commentMapper.delete(wrapper);
+        if (result == 0) {
+            throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
+        // 删除点赞信息
+        QueryWrapper<CommentLike> wrapper1 = new QueryWrapper<>();
+        wrapper.eq("cid", cid);
+        commentLikeMapper.delete(wrapper1);
     }
 }
