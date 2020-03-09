@@ -43,6 +43,9 @@ public class JwtUtil {
      * @return
      */
     public Integer verify(String token) {
+        if (token == null) {
+            throw new MyException(ResultEnum.TOKEN_ERROR);
+        }
         try {
             Algorithm algorithm = Algorithm.HMAC256(TOKEN_SECRET);
             JWTVerifier verifier = JWT.require(algorithm).build();

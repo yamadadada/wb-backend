@@ -1,7 +1,9 @@
 package com.yamada.weibo.service;
 
+import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -18,5 +20,9 @@ public interface WeiboService {
 
     List<WeiboLikeVO> getWeiboLike(Integer wid);
 
+    Integer add(Weibo weibo);
+
     void delete(Integer wid);
+
+    void upload(Integer wid, MultipartFile file);
 }

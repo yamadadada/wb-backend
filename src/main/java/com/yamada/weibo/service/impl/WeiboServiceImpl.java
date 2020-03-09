@@ -11,12 +11,15 @@ import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.*;
 import com.yamada.weibo.pojo.*;
 import com.yamada.weibo.service.WeiboService;
+import com.yamada.weibo.utils.FileUtil;
 import com.yamada.weibo.utils.ServletUtil;
 import com.yamada.weibo.vo.CommentVO;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
@@ -46,6 +49,12 @@ public class WeiboServiceImpl implements WeiboService {
 
     @Resource
     private FollowMapper followMapper;
+
+    @Value("${upload.imageHost}")
+    private String imageHost;
+
+    @Value("${upload.imagePath}")
+    private String imagePath;
 
     @Override
     public List<WeiboVO> getFollowWeibo(Integer page, Integer size) {
@@ -181,15 +190,19 @@ public class WeiboServiceImpl implements WeiboService {
 
     @Override
     public List<WeiboVO> getWeiboForward(Integer wid) {
+        List<WeiboVO> weiboVOList = new ArrayList<>();
+
         QueryWrapper<Forward> wrapper = new QueryWrapper<>();
         wrapper.eq("forward_wid", wid);
         List<Forward> forwardList = forwardMapper.selectList(wrapper);
         List<Integer> widList = forwardList.stream().map(Forward::getWid).collect(Collectors.toList());
+        if (widList.size() == 0) {
+            return weiboVOList;
+        }
         List<Weibo> weiboList = weiboMapper.selectBatchIds(widList);
 
         Map<Integer, User> userMap = getUserMap(weiboList);
 
-        List<WeiboVO> weiboVOList = new ArrayList<>();
         for (Weibo weibo : weiboList) {
             WeiboVO weiboVO = new WeiboVO();
             BeanUtils.copyProperties(weibo, weiboVO);
@@ -259,15 +272,16 @@ public class WeiboServiceImpl implements WeiboService {
         return commentList1;
     }
 
-    /**
-     * 获取微博作者的用户信息
-     * @param weiboList
-     * @return
-     */
-    private Map<Integer, User> getUserMap(List<Weibo> weiboList) {
-        List<Integer> uidList = weiboList.stream().map(Weibo::getUid).collect(Collectors.toList());
-        List<User> userList = userMapper.selectBatchIds(uidList);
-        return userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
+    @Override
+    public Integer add(Weibo weibo) {
+        Integer uid = ServletUtil.getUid();
+        weibo.setUid(uid);
+        weibo.setStatus(WeiboStatus.FORMAL.getCode());
+        int result = weiboMapper.insert(weibo);
+        if (result == 0) {
+            throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
+        return weibo.getWid();
     }
 
     @Override
@@ -277,7 +291,7 @@ public class WeiboServiceImpl implements WeiboService {
             throw new MyException(ResultEnum.WEIBO_NOT_EXIST);
         }
         Integer uid = ServletUtil.getUid();
-        if (!weibo.getUid().equals(uid)) {
+        if (!uid.equals(weibo.getUid())) {
             throw new MyException(ResultEnum.NOT_AUTH);
         }
         int result = weiboMapper.deleteById(wid);
@@ -294,7 +308,64 @@ public class WeiboServiceImpl implements WeiboService {
         List<Integer> cidList = commentList.stream().map(Comment::getCid).collect(Collectors.toList());
         commentMapper.delete(wrapper2);
         QueryWrapper<CommentLike> wrapper3 = new QueryWrapper<>();
-        wrapper3.in("cid", cidList);
-        commentLikeMapper.delete(wrapper3);
+        if (cidList.size() > 0) {
+            wrapper3.in("cid", cidList);
+            commentLikeMapper.delete(wrapper3);
+        }
+        // 删除微博的图片
+        if (weibo.getImages() != null) {
+            String[] split = weibo.getImages().split(",");
+            for (String image : split) {
+                if (image.startsWith(imageHost)) {
+                    // 删除本地图片
+                    String fileName = image.substring(image.lastIndexOf("/") + 1);
+                    FileUtil.delete(imagePath, fileName);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void upload(Integer wid, MultipartFile file) {
+        Integer uid = ServletUtil.getUid();
+        Weibo weibo = weiboMapper.selectById(wid);
+        if (weibo == null) {
+            throw new MyException(ResultEnum.WEIBO_NOT_EXIST);
+        }
+        if (!weibo.getUid().equals(uid)) {
+            throw new MyException(ResultEnum.NOT_AUTH);
+        }
+        int photoIndex = 0;
+        if (weibo.getImages() != null) {
+            String[] split = weibo.getImages().split(",");
+            photoIndex = split.length;
+        }
+        String fileName = wid + "-" + photoIndex + ".png";
+        if (FileUtil.upload(file, imagePath, fileName)) {
+            String fullPath = imageHost + "/images/" + fileName;
+            if (weibo.getImages() == null) {
+                weibo.setImages(fullPath);
+            } else {
+                weibo.setImages(weibo.getImages() + "," + fullPath);
+            }
+        }
+        int result = weiboMapper.updateById(weibo);
+        if (result == 0) {
+            throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
+    }
+
+    /**
+     * 获取微博作者的用户信息
+     * @param weiboList
+     * @return
+     */
+    private Map<Integer, User> getUserMap(List<Weibo> weiboList) {
+        List<Integer> uidList = weiboList.stream().map(Weibo::getUid).collect(Collectors.toList());
+        if (uidList.size() == 0) {
+            return new HashMap<>();
+        }
+        List<User> userList = userMapper.selectBatchIds(uidList);
+        return userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
     }
 }

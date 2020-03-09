@@ -2,12 +2,16 @@ package com.yamada.weibo.controller;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.yamada.weibo.exception.MyException;
+import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.ResultUtil;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -99,9 +103,24 @@ public class WeiboController {
         return ResultUtil.success(map);
     }
 
+    @PostMapping("")
+    public Object add(@RequestBody Weibo weibo, BindingResult result) {
+        if (result.hasErrors()) {
+            throw new MyException(result.getAllErrors().get(0).toString());
+        }
+        Integer wid = weiboService.add(weibo);
+        return ResultUtil.success(wid);
+    }
+
     @DeleteMapping("/{wid}")
     public Object delete(@PathVariable("wid") Integer wid) {
         weiboService.delete(wid);
+        return ResultUtil.success(null);
+    }
+
+    @PostMapping("/upload/{wid}")
+    public Object upload(@PathVariable("wid") Integer wid, @RequestParam("file") MultipartFile file) {
+        weiboService.upload(wid, file);
         return ResultUtil.success(null);
     }
 }
