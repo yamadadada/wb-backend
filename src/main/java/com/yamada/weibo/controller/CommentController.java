@@ -72,7 +72,7 @@ public class CommentController {
     @PostMapping("")
     public Object add(@RequestBody @Validated Comment comment, BindingResult result) {
         if (result.hasErrors()) {
-            throw new MyException(result.getAllErrors().get(0).toString());
+            throw new MyException(result.getAllErrors().get(0).getDefaultMessage());
         }
         if (StringUtils.isBlank(comment.getCommentName())) {
             comment.setCommentName(null);

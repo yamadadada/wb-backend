@@ -3,6 +3,8 @@ package com.yamada.weibo.form;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -16,7 +18,8 @@ public class UserInfoForm {
     private String avatar;
 
     @NotNull(message = "性别不能为空")
-    @Range(min = 0, max = 2, message = "性别格式不正确")
+    @Min(value = 0, message = "性别格式不正确")
+    @Max(value = 2, message = "性别格式不正确")
     private Integer gender;
 
     private String country;

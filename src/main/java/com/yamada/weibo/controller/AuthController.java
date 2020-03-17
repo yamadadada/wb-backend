@@ -35,7 +35,7 @@ public class AuthController {
     @PostMapping("/getUserInfo")
     public Object getUserInfo(@RequestBody @Valid UserInfoForm userInfoForm, BindingResult result) {
         if (result.hasErrors()) {
-            throw new MyException(result.getAllErrors().get(0).toString());
+            throw new MyException(result.getAllErrors().get(0).getDefaultMessage());
         }
         Map<String, Object> map = authService.getUserInfo(userInfoForm);
         return ResultUtil.success(map);

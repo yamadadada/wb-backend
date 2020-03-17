@@ -17,7 +17,6 @@ import com.yamada.weibo.vo.CommentVO;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,15 +49,11 @@ public class WeiboServiceImpl implements WeiboService {
     @Resource
     private FollowMapper followMapper;
 
-    @Value("${upload.imageHost}")
-    private String imageHost;
-
-    @Value("${upload.imagePath}")
-    private String imagePath;
+    @Resource
+    private FavoriteMapper favoriteMapper;
 
     @Override
     public List<WeiboVO> getFollowWeibo(Integer page, Integer size) {
-        List<WeiboVO> weiboVOList = new ArrayList<>();
         // 获得已关注的用户列表
         Integer uid = ServletUtil.getUid();
         QueryWrapper<Follow> wrapper1 = new QueryWrapper<>();
@@ -73,68 +68,9 @@ public class WeiboServiceImpl implements WeiboService {
             wrapper2.in("uid", followUidList).orderByDesc("create_time");
             PageHelper.startPage(page, size);
             List<Weibo> weiboList = weiboMapper.selectList(wrapper2);
-            if (weiboList.size() > 0) {
-                // 获取转发的base微博
-                List<Integer> forwardWidList = weiboList.stream().filter(e -> e.getStatus().equals(WeiboStatus.FORWARD.getCode()))
-                        .map(Weibo::getBaseForwardWid).collect(Collectors.toList());
-                List<Weibo> list4 = weiboMapper.selectBatchIds(forwardWidList);
-                Map<Integer, Weibo> map4 = list4.stream().collect(Collectors.toMap(Weibo::getWid, e -> e));
-                // 获得微博作者的用户姓名和头像
-                list4.addAll(weiboList);
-                Map<Integer, User> userMap = getUserMap(list4);
-                // 获取转发数
-                StringJoiner sj = new StringJoiner(",");
-                for (Weibo weibo : weiboList) {
-                    sj.add(String.valueOf(weibo.getWid()));
-                }
-                String widList = sj.toString();
-                List<ForwardCountDTO> list1 = forwardMapper.forwardCountByWid(widList);
-                Map<Integer, ForwardCountDTO> map1 = list1.stream().collect(Collectors.toMap(ForwardCountDTO::getWid, e -> e));
-                // 获取评论数
-                List<CommentCountDTO> list2 = commentMapper.commentCountByWid(widList);
-                Map<Integer, CommentCountDTO> map2 = list2.stream().collect(Collectors.toMap(CommentCountDTO::getWid, e -> e));
-                // 获取点赞数和是否点赞
-                List<WeiboLikeDTO> list3 = weiboLikeMapper.weiboLikeDTOListByWidAndUid(uid, widList);
-                Map<Integer, WeiboLikeDTO> map3 = list3.stream().collect(Collectors.toMap(WeiboLikeDTO::getWid, e -> e));
-                // 转换为VO
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                for (Weibo weibo : weiboList) {
-                    Integer wid = weibo.getWid();
-                    WeiboVO weiboVO = new WeiboVO();
-                    BeanUtils.copyProperties(weibo, weiboVO);
-                    weiboVO.setFullTime(sdf.format(weibo.getCreateTime()));
-                    // 解析图片
-                    if (weibo.getImages() != null) {
-                        String[] split = weibo.getImages().split(",");
-                        weiboVO.setImageList(Arrays.asList(split));
-                    }
-                    // 加入微博作者的用户姓名和头像
-                    User user = userMap.get(weibo.getUid());
-                    weiboVO.setName(user.getName());
-                    weiboVO.setAvatar(user.getAvatar());
-                    //设置转发数、评论数、点赞数、是否点赞
-                    weiboVO.setForwardCount(map1.get(wid).getForwardCount());
-                    weiboVO.setCommentCount(map2.get(wid).getCommentCount());
-                    weiboVO.setLikeCount(map3.get(wid).getLikeCount());
-                    weiboVO.setIsLike(map3.get(wid).getIsLike());
-                    // 设置转发的base微博
-                    if (weibo.getStatus().equals(WeiboStatus.FORWARD.getCode())) {
-                        Weibo w = map4.get(weibo.getBaseForwardWid());
-                        if (w != null) {
-                            weiboVO.setForwardUsername(userMap.get(w.getUid()).getName());
-                            weiboVO.setForwardAvatar(userMap.get(w.getUid()).getAvatar());
-                            weiboVO.setForwardContent(w.getContent());
-                            if (w.getImages() != null) {
-                                String[] split = w.getImages().split(",");
-                                weiboVO.setForwardImageList(Arrays.asList(split));
-                            }
-                        }
-                    }
-                    weiboVOList.add(weiboVO);
-                }
-            }
+            return toWeiboVOList(weiboList);
         }
-        return weiboVOList;
+        return new ArrayList<>();
     }
 
     @Override
@@ -170,6 +106,15 @@ public class WeiboServiceImpl implements WeiboService {
         WeiboLikeDTO weiboLikeDTO = weiboLikeMapper.weiboLikeDTOByWidAndUid(uid, wid);
         weiboVO.setLikeCount(weiboLikeDTO.getLikeCount());
         weiboVO.setIsLike(weiboLikeDTO.getIsLike());
+        // 获得是否点赞
+        QueryWrapper<Favorite> wrapper2 = new QueryWrapper<>();
+        wrapper2.eq("uid", uid).eq("wid", weiboVO.getWid());
+        Favorite favorite = favoriteMapper.selectOne(wrapper2);
+        if (favorite == null) {
+            weiboVO.setIsFavorite(false);
+        } else {
+            weiboVO.setIsFavorite(true);
+        }
         // 如果是转发微博，设置转发的base微博
         if (weibo.getStatus().equals(WeiboStatus.FORWARD.getCode())) {
             Weibo forwardWeibo = weiboMapper.selectById(weibo.getBaseForwardWid());
@@ -201,7 +146,8 @@ public class WeiboServiceImpl implements WeiboService {
         }
         List<Weibo> weiboList = weiboMapper.selectBatchIds(widList);
 
-        Map<Integer, User> userMap = getUserMap(weiboList);
+        List<Integer> uidList = weiboList.stream().map(Weibo::getUid).collect(Collectors.toList());
+        Map<Integer, User> userMap = userMapper.selectBatchIds(uidList).stream().collect(Collectors.toMap(User::getUid, e -> e));
 
         for (Weibo weibo : weiboList) {
             WeiboVO weiboVO = new WeiboVO();
@@ -316,10 +262,10 @@ public class WeiboServiceImpl implements WeiboService {
         if (weibo.getImages() != null) {
             String[] split = weibo.getImages().split(",");
             for (String image : split) {
-                if (image.startsWith(imageHost)) {
+                if (image.startsWith(FileUtil.imageHost)) {
                     // 删除本地图片
                     String fileName = image.substring(image.lastIndexOf("/") + 1);
-                    FileUtil.delete(imagePath, fileName);
+                    FileUtil.delete(FileUtil.imagePath, fileName);
                 }
             }
         }
@@ -341,8 +287,8 @@ public class WeiboServiceImpl implements WeiboService {
             photoIndex = split.length;
         }
         String fileName = wid + "-" + photoIndex + ".png";
-        if (FileUtil.upload(file, imagePath, fileName)) {
-            String fullPath = imageHost + "/images/" + fileName;
+        if (FileUtil.upload(file, FileUtil.imagePath, fileName)) {
+            String fullPath = FileUtil.imageHost + "/images/" + fileName;
             if (weibo.getImages() == null) {
                 weibo.setImages(fullPath);
             } else {
@@ -355,17 +301,134 @@ public class WeiboServiceImpl implements WeiboService {
         }
     }
 
+    @Override
+    public List<WeiboVO> getByUid(Integer uid) {
+        QueryWrapper<Weibo> wrapper = new QueryWrapper<>();
+        wrapper.eq("uid", uid).orderByDesc("create_time");
+        List<Weibo> weiboList = weiboMapper.selectList(wrapper);
+        return toWeiboVOList(weiboList);
+    }
+
+    @Override
+    public List<WeiboVO> myLike() {
+        Integer loginUid = ServletUtil.getUid();
+        QueryWrapper<WeiboLike> wrapper = new QueryWrapper<>();
+        wrapper.eq("uid", loginUid).orderByDesc("create_time");
+        List<WeiboLike> likeList = weiboLikeMapper.selectList(wrapper);
+        if (likeList.size() == 0) {
+            return new ArrayList<>();
+        }
+        List<Integer> widList = likeList.stream().map(WeiboLike::getWid).collect(Collectors.toList());
+        return toWeiboVOList(weiboMapper.selectBatchIds(widList));
+    }
+
+    @Override
+    public List<WeiboVO> myFavorite() {
+        Integer loginUid = ServletUtil.getUid();
+        QueryWrapper<Favorite> wrapper = new QueryWrapper<>();
+        wrapper.eq("uid", loginUid).orderByDesc("create_time");
+        List<Favorite> favoriteList = favoriteMapper.selectList(wrapper);
+        if (favoriteList.size() == 0) {
+            return new ArrayList<>();
+        }
+        List<Integer> widList = favoriteList.stream().map(Favorite::getWid).collect(Collectors.toList());
+        return toWeiboVOList(weiboMapper.selectBatchIds(widList));
+    }
+
     /**
-     * 获取微博作者的用户信息
-     * @param weiboList
+     * 解析图片地址
+     * @param weibo
      * @return
      */
-    private Map<Integer, User> getUserMap(List<Weibo> weiboList) {
-        List<Integer> uidList = weiboList.stream().map(Weibo::getUid).collect(Collectors.toList());
-        if (uidList.size() == 0) {
-            return new HashMap<>();
+    private List<String> parseImage(Weibo weibo) {
+        if (weibo.getImages() != null) {
+            String[] split = weibo.getImages().split(",");
+            for (int i = 0; i < split.length; i++) {
+                if (split[i].startsWith("/images/")) {
+                    split[i] = FileUtil.imageHost + split[i];
+                }
+            }
+            return Arrays.asList(split);
         }
-        List<User> userList = userMapper.selectBatchIds(uidList);
-        return userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
+        return null;
+    }
+
+    private List<WeiboVO> toWeiboVOList(List<Weibo> weiboList) {
+        List<WeiboVO> weiboVOList = new ArrayList<>();
+        if (weiboList.size() == 0) {
+            return weiboVOList;
+        }
+        // 获取转发的base微博
+        Map<Integer, Weibo> forwardMap = new HashMap<>();
+        List<Integer> forwardWidList = weiboList.stream().filter(e -> e.getStatus().equals(WeiboStatus.FORWARD.getCode()))
+                .map(Weibo::getBaseForwardWid).collect(Collectors.toList());
+        if (forwardWidList.size() > 0) {
+            forwardMap = weiboMapper.selectBatchIds(forwardWidList).stream().collect(Collectors.toMap(Weibo::getWid, e -> e));
+        }
+        // 获得微博（包括转发的base）作者的用户姓名和头像
+        List<Weibo> list = new ArrayList<>(forwardMap.values());
+        list.addAll(weiboList);
+        List<Integer> uidList = list.stream().map(Weibo::getUid).collect(Collectors.toList());
+        Map<Integer, User> userMap = userMapper.selectBatchIds(uidList).stream().collect(Collectors.toMap(User::getUid, e -> e));
+        // 获取转发数
+        StringJoiner sj = new StringJoiner(",");
+        for (Weibo weibo : weiboList) {
+            sj.add(String.valueOf(weibo.getWid()));
+        }
+        String widList = sj.toString();
+        List<ForwardCountDTO> list1 = forwardMapper.forwardCountByWid(widList);
+        Map<Integer, ForwardCountDTO> forwardCountMap = list1.stream().collect(Collectors.toMap(ForwardCountDTO::getWid, e -> e));
+        // 获取评论数
+        List<CommentCountDTO> list2 = commentMapper.commentCountByWid(widList);
+        Map<Integer, CommentCountDTO> commentCountMap = list2.stream().collect(Collectors.toMap(CommentCountDTO::getWid, e -> e));
+        // 获取点赞数和是否点赞
+        int uid = ServletUtil.getUid();
+        List<WeiboLikeDTO> list3 = weiboLikeMapper.weiboLikeDTOListByWidAndUid(uid, widList);
+        Map<Integer, WeiboLikeDTO> likeMap = list3.stream().collect(Collectors.toMap(WeiboLikeDTO::getWid, e -> e));
+        // 获得是否收藏
+        QueryWrapper<Favorite> wrapper = new QueryWrapper<>();
+        wrapper.eq("uid", uid).in("wid", weiboList.stream().map(Weibo::getWid).collect(Collectors.toList()));
+        Set<Integer> isFavoriteSet = favoriteMapper.selectList(wrapper).stream().map(Favorite::getWid).collect(Collectors.toSet());
+        // 转换为VO
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        for (Weibo weibo : weiboList) {
+            int wid = weibo.getWid();
+            WeiboVO weiboVO = new WeiboVO();
+            BeanUtils.copyProperties(weibo, weiboVO);
+            weiboVO.setFullTime(sdf.format(weibo.getCreateTime()));
+            // 解析图片
+            weiboVO.setImageList(parseImage(weibo));
+            // 加入微博作者的用户姓名和头像
+            User user = userMap.get(weibo.getUid());
+            weiboVO.setName(user.getName());
+            weiboVO.setAvatar(user.getAvatar());
+            // 设置转发的base微博
+            if (weibo.getStatus().equals(WeiboStatus.FORWARD.getCode())) {
+                Weibo baseWeibo = forwardMap.get(weibo.getBaseForwardWid());
+                if (baseWeibo != null) {
+                    weiboVO.setForwardUsername(userMap.get(baseWeibo.getUid()).getName());
+                    weiboVO.setForwardAvatar(userMap.get(baseWeibo.getUid()).getAvatar());
+                    weiboVO.setForwardContent(baseWeibo.getContent());
+                    weiboVO.setForwardImageList(parseImage(baseWeibo));
+                }
+            }
+            // 加入转发数
+            weiboVO.setForwardCount(forwardCountMap.get(wid).getForwardCount());
+            // 加入评论数
+            weiboVO.setCommentCount(commentCountMap.get(wid).getCommentCount());
+            // 加入点赞数
+            weiboVO.setLikeCount(likeMap.get(wid).getLikeCount());
+            // 加入是否点赞
+            weiboVO.setIsLike(likeMap.get(wid).getIsLike());
+            // 加入是否收藏
+            if (isFavoriteSet.contains(wid)) {
+                weiboVO.setIsFavorite(true);
+            } else {
+                weiboVO.setIsFavorite(false);
+            }
+
+            weiboVOList.add(weiboVO);
+        }
+        return weiboVOList;
     }
 }

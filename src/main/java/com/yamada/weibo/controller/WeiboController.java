@@ -106,7 +106,7 @@ public class WeiboController {
     @PostMapping("")
     public Object add(@RequestBody Weibo weibo, BindingResult result) {
         if (result.hasErrors()) {
-            throw new MyException(result.getAllErrors().get(0).toString());
+            throw new MyException(result.getAllErrors().get(0).getDefaultMessage());
         }
         Integer wid = weiboService.add(weibo);
         return ResultUtil.success(wid);
@@ -122,5 +122,28 @@ public class WeiboController {
     public Object upload(@PathVariable("wid") Integer wid, @RequestParam("file") MultipartFile file) {
         weiboService.upload(wid, file);
         return ResultUtil.success(null);
+    }
+
+    @GetMapping("/user/{uid}")
+    public Object getByUid(@PathVariable("uid") Integer uid,
+                           @RequestParam(value = "page", defaultValue = "1") Integer page,
+                           @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        PageHelper.startPage(page, size);
+        List<WeiboVO> weiboVOList = weiboService.getByUid(uid);
+        return ResultUtil.success(weiboVOList);
+    }
+
+    @GetMapping("/myLike")
+    public Object myLike(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                         @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        PageHelper.startPage(page, size);
+        return ResultUtil.success(weiboService.myLike());
+    }
+
+    @GetMapping("/myFavorite")
+    public Object myFavorite(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                             @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        PageHelper.startPage(page, size);
+        return ResultUtil.success(weiboService.myFavorite());
     }
 }

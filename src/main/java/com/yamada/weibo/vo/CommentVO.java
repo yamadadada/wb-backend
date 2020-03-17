@@ -1,7 +1,7 @@
 package com.yamada.weibo.vo;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.yamada.weibo.utils.Date2StringSerializer;
+import com.yamada.weibo.utils.DateTimeSerializer;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ public class CommentVO {
 
     private Integer commentType;
 
-    @JsonSerialize(using = Date2StringSerializer.class)
+    @JsonSerialize(using = DateTimeSerializer.class)
     private Date createTime;
 
     // 该评论回复的评论的cid

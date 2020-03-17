@@ -25,4 +25,10 @@ public interface WeiboService {
     void delete(Integer wid);
 
     void upload(Integer wid, MultipartFile file);
+
+    List<WeiboVO> getByUid(Integer uid);
+
+    List<WeiboVO> myLike();
+
+    List<WeiboVO> myFavorite();
 }

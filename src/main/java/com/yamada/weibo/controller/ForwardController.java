@@ -23,7 +23,7 @@ public class ForwardController {
     @PostMapping("")
     public Object add(@RequestBody @Validated ForwardForm form, BindingResult result) {
         if (result.hasErrors()) {
-            throw new MyException(result.getAllErrors().get(0).toString());
+            throw new MyException(result.getAllErrors().get(0).getDefaultMessage());
         }
         forwardService.add(form);
         return ResultUtil.success(null);

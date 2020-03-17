@@ -9,7 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class Date2StringSerializer extends JsonSerializer<Date> {
+public class DateTimeSerializer extends JsonSerializer<Date> {
 
     @Override
     public void serialize(Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {

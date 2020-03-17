@@ -1,13 +1,30 @@
 package com.yamada.weibo.utils;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
 
 @Slf4j
+@Component
 public class FileUtil {
+
+    public static String imageHost;
+
+    public static String imagePath;
+
+    @Value("${upload.imageHost}")
+    public void setImageHost(String imageHost) {
+        FileUtil.imageHost = imageHost;
+    }
+
+    @Value("${upload.imagePath}")
+    public void setImagePath(String imagePath) {
+        FileUtil.imagePath = imagePath;
+    }
 
     public static boolean upload(MultipartFile file, String path, String fileName) {
         String realPath = path + "/" + fileName;

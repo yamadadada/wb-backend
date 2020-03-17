@@ -1,7 +1,7 @@
 package com.yamada.weibo.vo;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.yamada.weibo.utils.Date2StringSerializer;
+import com.yamada.weibo.utils.DateTimeSerializer;
 import lombok.Data;
 
 import java.util.Date;
@@ -30,7 +30,7 @@ public class WeiboVO {
 
     private List<String> imageList;
 
-    @JsonSerialize(using = Date2StringSerializer.class)
+    @JsonSerialize(using = DateTimeSerializer.class)
     private Date createTime;
 
     private String fullTime;
@@ -48,4 +48,6 @@ public class WeiboVO {
     private Boolean isLike;
 
     private List<CommentVO> commentVOList;
+
+    private Boolean isFavorite;
 }

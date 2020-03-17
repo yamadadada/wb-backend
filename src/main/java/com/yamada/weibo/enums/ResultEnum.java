@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ResultEnum {
+    NAME_REPETITION(-9, "该昵称已存在"),
     USER_NOT_EXIST(-8, "该用户不存在"),
     NOT_AUTH(-7, "你没有权限进行这个操作"),
     COMMENT_NOT_EXIST(-6, "该评论不存在"),
