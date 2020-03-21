@@ -10,13 +10,17 @@ import com.yamada.weibo.enums.WeiboStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.*;
 import com.yamada.weibo.pojo.*;
+import com.yamada.weibo.service.TopicService;
 import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.FileUtil;
 import com.yamada.weibo.utils.ServletUtil;
+import com.yamada.weibo.utils.TextUtil;
 import com.yamada.weibo.vo.CommentVO;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -52,6 +56,13 @@ public class WeiboServiceImpl implements WeiboService {
     @Resource
     private FavoriteMapper favoriteMapper;
 
+    private final TopicService topicService;
+
+    @Autowired
+    public WeiboServiceImpl(TopicService topicService) {
+        this.topicService = topicService;
+    }
+
     @Override
     public List<WeiboVO> getFollowWeibo(Integer page, Integer size) {
         // 获得已关注的用户列表
@@ -81,6 +92,8 @@ public class WeiboServiceImpl implements WeiboService {
         }
         WeiboVO weiboVO = new WeiboVO();
         BeanUtils.copyProperties(weibo, weiboVO);
+        // 解析文本
+        weiboVO.setContent(TextUtil.convertToTextVO(weibo.getContent()));
         // 设置图片
         if (weibo.getImages() != null) {
             String[] split = weibo.getImages().split(",");
@@ -122,14 +135,13 @@ public class WeiboServiceImpl implements WeiboService {
                 User forwardUser = userMapper.selectById(forwardWeibo.getUid());
                 weiboVO.setForwardUsername(forwardUser.getName());
                 weiboVO.setForwardAvatar(forwardUser.getAvatar());
-                weiboVO.setForwardContent(forwardWeibo.getContent());
+                weiboVO.setForwardContent(TextUtil.convertToTextVO(forwardWeibo.getContent()));
                 if (forwardWeibo.getImages() != null) {
                     String[] split = forwardWeibo.getImages().split(",");
                     weiboVO.setForwardImageList(Arrays.asList(split));
                 }
             }
         }
-
         return weiboVO;
     }
 
@@ -152,6 +164,8 @@ public class WeiboServiceImpl implements WeiboService {
         for (Weibo weibo : weiboList) {
             WeiboVO weiboVO = new WeiboVO();
             BeanUtils.copyProperties(weibo, weiboVO);
+            // 解析文本
+            weiboVO.setContent(TextUtil.convertToTextVO(weibo.getContent()));
             // 加入微博作者信息
             weiboVO.setName(userMap.get(weibo.getUid()).getName());
             weiboVO.setAvatar(userMap.get(weibo.getUid()).getAvatar());
@@ -178,46 +192,6 @@ public class WeiboServiceImpl implements WeiboService {
         return weiboLikeMapper.getWeiboLikeList(wid);
     }
 
-    /**
-     * 查找指定微博的评论，处理评论之间的关系
-     * @param wid
-     * @return
-     */
-    private List<CommentVO> getCommentByWid(Integer wid, String sort) {
-        Integer uid = ServletUtil.getUid();
-        // 获取该微博的第一层评论
-        List<CommentVO> commentList1 = commentMapper.getLevel1ByWid(wid, sort, uid);
-        if (commentList1.size() == 0) {
-            return new ArrayList<>();
-        }
-        List<Integer> uidList = commentList1.stream().map(CommentVO::getUid).collect(Collectors.toList());
-        // 获取该微博的第二层评论
-        StringJoiner sj = new StringJoiner(",");
-        for (CommentVO commentVO : commentList1) {
-            sj.add(String.valueOf(commentVO.getCid()));
-        }
-        List<CommentVO> commentList2 = commentMapper.getLevel2ByCidList(sj.toString(), uid);
-        // 设置名称、头像
-        uidList.addAll(commentList2.stream().map(CommentVO::getUid).collect(Collectors.toList()));
-        List<User> userList = userMapper.selectBatchIds(uidList);
-        Map<Integer, User> userMap = userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
-        // 合并两层评论
-        Map<Integer, CommentVO> map = commentList1.stream().collect(Collectors.toMap(CommentVO::getCid, e -> e));
-        for (CommentVO comment : commentList1) {
-            Integer id = comment.getUid();
-            comment.setName(userMap.get(id).getName());
-            comment.setAvatar(userMap.get(id).getAvatar());
-        }
-        for (CommentVO comment : commentList2) {
-            //加入名字
-            comment.setName(userMap.get(comment.getUid()).getName());
-
-            Integer cid = comment.getCommentCid();
-            map.get(cid).addComment(comment);
-        }
-        return commentList1;
-    }
-
     @Override
     public Integer add(Weibo weibo) {
         Integer uid = ServletUtil.getUid();
@@ -227,6 +201,8 @@ public class WeiboServiceImpl implements WeiboService {
         if (result == 0) {
             throw new MyException(ResultEnum.OPERATE_ERROR);
         }
+        // 添加话题
+        topicService.addByWeibo(weibo.getWid(), weibo.getContent());
         return weibo.getWid();
     }
 
@@ -269,6 +245,10 @@ public class WeiboServiceImpl implements WeiboService {
                 }
             }
         }
+        // 删除转发关系
+        QueryWrapper<Forward> wrapper4 = new QueryWrapper<>();
+        wrapper4.eq("wid", wid);
+        forwardMapper.delete(wrapper4);
     }
 
     @Override
@@ -332,7 +312,43 @@ public class WeiboServiceImpl implements WeiboService {
             return new ArrayList<>();
         }
         List<Integer> widList = favoriteList.stream().map(Favorite::getWid).collect(Collectors.toList());
-        return toWeiboVOList(weiboMapper.selectBatchIds(widList));
+        // 按顺序设置weiboVO
+        List<WeiboVO> result = new ArrayList<>();
+        Map<Integer, WeiboVO> weiboVOMap = toWeiboVOList(weiboMapper.selectBatchIds(widList)).stream()
+                .collect(Collectors.toMap(WeiboVO::getWid, e -> e));
+        for (Integer wid : widList) {
+            if (weiboVOMap.containsKey(wid)) {
+                result.add(weiboVOMap.get(wid));
+            } else {
+                WeiboVO weiboVO = new WeiboVO();
+                weiboVO.setWid(wid);
+                weiboVO.setStatus(WeiboStatus.DELETE.getCode());
+                weiboVO.setIsFavorite(true);
+                result.add(weiboVO);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<WeiboVO> realTime() {
+        QueryWrapper<Weibo> wrapper = new QueryWrapper<>();
+        wrapper.orderByDesc("create_time");
+        return toWeiboVOList(weiboMapper.selectList(wrapper));
+    }
+
+    @Override
+    public List<WeiboVO> shcool() {
+        int uid = ServletUtil.getUid();
+        QueryWrapper<User> wrapper1 = new QueryWrapper<>();
+        wrapper1.select("school").eq("uid", uid);
+        User user = userMapper.selectOne(wrapper1);
+        if (StringUtils.isBlank(user.getSchool())) {
+            throw new MyException(ResultEnum.SCHOOL_NOT_EXIST);
+        }
+        QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
+        wrapper2.eq("school", user.getSchool()).orderByDesc("create_time");
+        return toWeiboVOList(weiboMapper.selectList(wrapper2));
     }
 
     /**
@@ -395,6 +411,9 @@ public class WeiboServiceImpl implements WeiboService {
             int wid = weibo.getWid();
             WeiboVO weiboVO = new WeiboVO();
             BeanUtils.copyProperties(weibo, weiboVO);
+            // 解析文本
+            weiboVO.setContent(TextUtil.convertToTextVO(weibo.getContent()));
+
             weiboVO.setFullTime(sdf.format(weibo.getCreateTime()));
             // 解析图片
             weiboVO.setImageList(parseImage(weibo));
@@ -408,7 +427,7 @@ public class WeiboServiceImpl implements WeiboService {
                 if (baseWeibo != null) {
                     weiboVO.setForwardUsername(userMap.get(baseWeibo.getUid()).getName());
                     weiboVO.setForwardAvatar(userMap.get(baseWeibo.getUid()).getAvatar());
-                    weiboVO.setForwardContent(baseWeibo.getContent());
+                    weiboVO.setForwardContent(TextUtil.convertToTextVO(baseWeibo.getContent()));
                     weiboVO.setForwardImageList(parseImage(baseWeibo));
                 }
             }
@@ -426,9 +445,52 @@ public class WeiboServiceImpl implements WeiboService {
             } else {
                 weiboVO.setIsFavorite(false);
             }
-
             weiboVOList.add(weiboVO);
         }
         return weiboVOList;
+    }
+
+    /**
+     * 查找指定微博的评论，处理评论之间的关系
+     * @param wid
+     * @return
+     */
+    private List<CommentVO> getCommentByWid(Integer wid, String sort) {
+        Integer uid = ServletUtil.getUid();
+        // 获取该微博的第一层评论
+        List<CommentVO> commentList1 = commentMapper.getLevel1ByWid(wid, sort, uid);
+        if (commentList1.size() == 0) {
+            return new ArrayList<>();
+        }
+        List<Integer> uidList = commentList1.stream().map(CommentVO::getUid).collect(Collectors.toList());
+        // 获取该微博的第二层评论
+        StringJoiner sj = new StringJoiner(",");
+        for (CommentVO commentVO : commentList1) {
+            sj.add(String.valueOf(commentVO.getCid()));
+        }
+        List<CommentVO> commentList2 = commentMapper.getLevel2ByCidList(sj.toString(), uid);
+        // 设置名称、头像
+        uidList.addAll(commentList2.stream().map(CommentVO::getUid).collect(Collectors.toList()));
+        List<User> userList = userMapper.selectBatchIds(uidList);
+        Map<Integer, User> userMap = userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
+        // 合并两层评论
+        Map<Integer, CommentVO> map = commentList1.stream().collect(Collectors.toMap(CommentVO::getCid, e -> e));
+        for (CommentVO comment : commentList1) {
+            Integer id = comment.getUid();
+            comment.setName(userMap.get(id).getName());
+            comment.setAvatar(userMap.get(id).getAvatar());
+            // 设置text
+            comment.setTextVOList(TextUtil.convertToTextVO(comment.getContent()));
+        }
+        for (CommentVO comment : commentList2) {
+            //加入名字
+            comment.setName(userMap.get(comment.getUid()).getName());
+            // 设置text
+            comment.setTextVOList(TextUtil.convertToTextVO(comment.getContent()));
+
+            Integer cid = comment.getCommentCid();
+            map.get(cid).addComment(comment);
+        }
+        return commentList1;
     }
 }

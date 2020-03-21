@@ -20,4 +20,6 @@ public interface UserService {
     List<UserVO> searchByName(String name);
 
     List<UserIndexVO> getUserIndex();
+
+    UserVO getByName(String name);
 }

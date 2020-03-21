@@ -14,7 +14,7 @@ public class WeiboVO {
 
     private Integer uid;
 
-    private String content;
+    private List<TextVO> content;
 
     private Integer status;
 
@@ -24,7 +24,7 @@ public class WeiboVO {
 
     private String forwardAvatar;
 
-    private String forwardContent;
+    private List<TextVO> forwardContent;
 
     private List<String> forwardImageList;
 

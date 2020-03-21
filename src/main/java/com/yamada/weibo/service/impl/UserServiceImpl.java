@@ -39,41 +39,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserVO getUserInfo(Integer uid) {
         User user = userMapper.selectById(uid);
-        if (user == null) {
-            throw new MyException(ResultEnum.USER_NOT_EXIST);
-        }
-        UserVO userVO = new UserVO();
-        BeanUtils.copyProperties(user, userVO);
-        // 解析注册时间
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        userVO.setRegisterTime(sdf.format(user.getCreateTime()));
-        // 获得微博数
-        QueryWrapper<Weibo> wrapper1 = new QueryWrapper<>();
-        wrapper1.eq("uid", uid);
-        userVO.setWeiboCount(weiboMapper.selectCount(wrapper1));
-        // 获得关注数和粉丝数
-        int followCount = 0;
-        int fanCount = 0;
-        QueryWrapper<Follow> wrapper2 = new QueryWrapper<>();
-        wrapper2.eq("uid", uid).or().eq("follow_uid", uid);
-        List<Follow> followList = followMapper.selectList(wrapper2);
-        boolean isFollow = false;
-        int loginUid = ServletUtil.getUid();
-        for (Follow follow : followList) {
-            if (follow.getUid().equals(uid)) {
-                followCount++;
-            } else {
-                if (follow.getUid().equals(loginUid)) {
-                    isFollow = true;
-                }
-                fanCount++;
-            }
-        }
-        userVO.setIsFollow(isFollow);
-        userVO.setFollowCount(followCount);
-        userVO.setFanCount(fanCount);
-
-        return userVO;
+        return toUserVO(user);
     }
 
     @Override
@@ -191,5 +157,52 @@ public class UserServiceImpl implements UserService {
             }
         }
         return result;
+    }
+
+    @Override
+    public UserVO getByName(String name) {
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.eq("name", name);
+        User user = userMapper.selectOne(wrapper);
+        return toUserVO(user);
+    }
+
+    private UserVO toUserVO(User user) {
+        if (user == null) {
+            throw new MyException(ResultEnum.USER_NOT_EXIST);
+        }
+        Integer uid = user.getUid();
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        // 解析注册时间
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        userVO.setRegisterTime(sdf.format(user.getCreateTime()));
+        // 获得微博数
+        QueryWrapper<Weibo> wrapper1 = new QueryWrapper<>();
+        wrapper1.eq("uid", uid);
+        userVO.setWeiboCount(weiboMapper.selectCount(wrapper1));
+        // 获得关注数和粉丝数
+        int followCount = 0;
+        int fanCount = 0;
+        QueryWrapper<Follow> wrapper2 = new QueryWrapper<>();
+        wrapper2.eq("uid", uid).or().eq("follow_uid", uid);
+        List<Follow> followList = followMapper.selectList(wrapper2);
+        boolean isFollow = false;
+        int loginUid = ServletUtil.getUid();
+        for (Follow follow : followList) {
+            if (follow.getUid().equals(uid)) {
+                followCount++;
+            } else {
+                if (follow.getUid().equals(loginUid)) {
+                    isFollow = true;
+                }
+                fanCount++;
+            }
+        }
+        userVO.setIsFollow(isFollow);
+        userVO.setFollowCount(followCount);
+        userVO.setFanCount(fanCount);
+
+        return userVO;
     }
 }

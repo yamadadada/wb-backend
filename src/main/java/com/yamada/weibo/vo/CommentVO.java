@@ -23,6 +23,8 @@ public class CommentVO {
 
     private String content;
 
+    private List<TextVO> textVOList;
+
     private Integer commentType;
 
     @JsonSerialize(using = DateTimeSerializer.class)
@@ -33,6 +35,9 @@ public class CommentVO {
 
     // 该评论回复的评论的用户名称
     private String commentName;
+
+    // 该评论回复的评论的用户id
+    private Integer commentUid;
 
     private Integer likeCount;
 

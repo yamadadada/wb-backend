@@ -9,7 +9,9 @@ import com.yamada.weibo.mapper.WeiboMapper;
 import com.yamada.weibo.pojo.Forward;
 import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.service.ForwardService;
+import com.yamada.weibo.service.TopicService;
 import com.yamada.weibo.utils.ServletUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,13 @@ public class ForwardServiceImpl implements ForwardService {
 
     @Resource
     private WeiboMapper weiboMapper;
+
+    private final TopicService topicService;
+
+    @Autowired
+    public ForwardServiceImpl(TopicService topicService) {
+        this.topicService = topicService;
+    }
 
     @Override
     @Transactional
@@ -74,5 +83,7 @@ public class ForwardServiceImpl implements ForwardService {
                 forwardMapper.insert(forward);
             }
         }
+        // 添加话题
+        topicService.addByWeibo(weibo.getWid(), weibo.getContent());
     }
 }

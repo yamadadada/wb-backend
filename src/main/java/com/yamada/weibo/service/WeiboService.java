@@ -31,4 +31,8 @@ public interface WeiboService {
     List<WeiboVO> myLike();
 
     List<WeiboVO> myFavorite();
+
+    List<WeiboVO> realTime();
+
+    List<WeiboVO> shcool();
 }

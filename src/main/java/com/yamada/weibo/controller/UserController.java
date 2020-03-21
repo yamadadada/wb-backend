@@ -72,4 +72,9 @@ public class UserController {
     public Object getUserIndex() {
         return ResultUtil.success(userService.getUserIndex());
     }
+
+    @GetMapping("/getByName")
+    public Object getUserByName(@RequestParam("name") String name) {
+        return ResultUtil.success(userService.getByName(name));
+    }
 }

@@ -12,6 +12,7 @@ import com.yamada.weibo.pojo.CommentLike;
 import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.service.CommentService;
 import com.yamada.weibo.utils.ServletUtil;
+import com.yamada.weibo.utils.TextUtil;
 import com.yamada.weibo.vo.CommentVO;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +44,8 @@ public class CommentServiceImpl implements CommentService {
         User user = userMapper.selectById(commentVO.getUid());
         commentVO.setName(user.getName());
         commentVO.setAvatar(user.getAvatar());
+        // 设置text
+        commentVO.setTextVOList(TextUtil.convertToTextVO(commentVO.getContent()));
 
         return commentVO;
     }
@@ -60,8 +63,11 @@ public class CommentServiceImpl implements CommentService {
         Map<Integer, User> map = userList.stream().collect(Collectors.toMap(User::getUid, e -> e));
         for (CommentVO commentVO : commentVOList) {
             Integer id = commentVO.getUid();
+            // 设置名称、头像
             commentVO.setName(map.get(id).getName());
             commentVO.setAvatar(map.get(id).getAvatar());
+            // 设置text
+            commentVO.setTextVOList(TextUtil.convertToTextVO(commentVO.getContent()));
         }
         return commentVOList;
     }

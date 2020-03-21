@@ -29,6 +29,8 @@ public class Comment {
 
     private String commentName;
 
+    private Integer commentUid;
+
     private Integer commentType;
 
     private Date createTime;

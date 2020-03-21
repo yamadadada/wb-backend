@@ -146,4 +146,18 @@ public class WeiboController {
         PageHelper.startPage(page, size);
         return ResultUtil.success(weiboService.myFavorite());
     }
+
+    @GetMapping("/realTime")
+    public Object realTime(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                           @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        PageHelper.startPage(page, size);
+        return ResultUtil.success(weiboService.realTime());
+    }
+
+    @GetMapping("/school")
+    public Object school(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                           @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        PageHelper.startPage(page, size);
+        return ResultUtil.success(weiboService.realTime());
+    }
 }

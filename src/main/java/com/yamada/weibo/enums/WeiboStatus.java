@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum WeiboStatus {
     FORMAL(0, "普通"),
-    FORWARD(1, "转发")
+    FORWARD(1, "转发"),
+    DELETE(2, "已删除")
     ;
 
     private Integer code;

@@ -29,7 +29,7 @@ public class CommentController {
     }
 
     /**
-     * 进入评论详情页
+     * 进入评论详情页，同时获取10个第二层评论
      * @param cid
      * @return
      */
@@ -49,7 +49,7 @@ public class CommentController {
 
     /**
      * 获得第二层评论
-     * @param cid
+     * @param cid 第一层评论cid
      * @param sort
      * @param page
      * @param size
