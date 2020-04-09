@@ -7,7 +7,9 @@ import com.yamada.weibo.mapper.CommentLikeMapper;
 import com.yamada.weibo.mapper.CommentMapper;
 import com.yamada.weibo.pojo.CommentLike;
 import com.yamada.weibo.service.CommentLikeService;
+import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.utils.ServletUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -20,6 +22,13 @@ public class CommentLikeServiceImpl implements CommentLikeService {
 
     @Resource
     private CommentMapper commentMapper;
+
+    private final MessageService messageService;
+
+    @Autowired
+    public CommentLikeServiceImpl(MessageService messageService) {
+        this.messageService = messageService;
+    }
 
     @Override
     public void like(Integer cid) {
@@ -34,6 +43,8 @@ public class CommentLikeServiceImpl implements CommentLikeService {
             commentLike.setUid(uid);
             commentLike.setCid(cid);
             commentLikeMapper.insert(commentLike);
+            // 发送消息
+            messageService.sendLikeByCid(cid, ServletUtil.getUid());
         }
     }
 

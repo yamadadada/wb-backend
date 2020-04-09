@@ -4,10 +4,12 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.pojo.Weibo;
+import com.yamada.weibo.service.SearchService;
 import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.ResultUtil;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -23,9 +25,12 @@ public class WeiboController {
 
     private final WeiboService weiboService;
 
+    private final SearchService searchService;
+
     @Autowired
-    public WeiboController(WeiboService weiboService) {
+    public WeiboController(WeiboService weiboService, SearchService searchService) {
         this.weiboService = weiboService;
+        this.searchService = searchService;
     }
 
     /**
@@ -147,6 +152,12 @@ public class WeiboController {
         return ResultUtil.success(weiboService.myFavorite());
     }
 
+    @GetMapping("/hot")
+    public Object hot(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                      @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResultUtil.success(weiboService.hot(page, size));
+    }
+
     @GetMapping("/realTime")
     public Object realTime(@RequestParam(value = "page", defaultValue = "1") Integer page,
                            @RequestParam(value = "size", defaultValue = "10") Integer size) {
@@ -158,6 +169,17 @@ public class WeiboController {
     public Object school(@RequestParam(value = "page", defaultValue = "1") Integer page,
                            @RequestParam(value = "size", defaultValue = "10") Integer size) {
         PageHelper.startPage(page, size);
-        return ResultUtil.success(weiboService.realTime());
+        return ResultUtil.success(weiboService.shcool());
+    }
+
+    @GetMapping("/search")
+    public Object search(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                         @RequestParam(value = "size", defaultValue = "10") Integer size,
+                         @RequestParam("content") String content) {
+        if (StringUtils.isBlank(content)) {
+            return ResultUtil.success(null);
+        }
+        searchService.addSearch(content);
+        return ResultUtil.success(weiboService.search(content, page, size));
     }
 }

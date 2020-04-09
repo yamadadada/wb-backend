@@ -11,6 +11,7 @@ import com.yamada.weibo.utils.TextUtil;
 import com.yamada.weibo.vo.TopicVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -42,8 +43,8 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
-    public void addByWeibo(Integer wid, String content) {
-        int loginUid = ServletUtil.getUid();
+    @Async
+    public void addByWeibo(Integer wid, String content, Integer loginUid) {
         List<String> topicList = TextUtil.parseTopic(content);
         for (String name : topicList) {
             QueryWrapper<Topic> wrapper = new QueryWrapper<>();

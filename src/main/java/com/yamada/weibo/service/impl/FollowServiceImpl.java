@@ -6,7 +6,9 @@ import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.FollowMapper;
 import com.yamada.weibo.pojo.Follow;
 import com.yamada.weibo.service.FollowService;
+import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.utils.ServletUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -16,6 +18,13 @@ public class FollowServiceImpl implements FollowService {
 
     @Resource
     private FollowMapper followMapper;
+
+    public final MessageService messageService;
+
+    @Autowired
+    public FollowServiceImpl(MessageService messageService) {
+        this.messageService = messageService;
+    }
 
     @Override
     public void addFollow(Integer uid) {
@@ -32,6 +41,8 @@ public class FollowServiceImpl implements FollowService {
             if (result == 0) {
                 throw new MyException(ResultEnum.OPERATE_ERROR);
             }
+            // 发送消息
+            messageService.sendSystem(uid, "成为了你的粉丝", loginUid);
         }
     }
 

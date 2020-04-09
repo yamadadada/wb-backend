@@ -3,6 +3,7 @@ package com.yamada.weibo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yamada.weibo.enums.CommentType;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.WeiboOperationType;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.CommentLikeMapper;
 import com.yamada.weibo.mapper.CommentMapper;
@@ -11,9 +12,12 @@ import com.yamada.weibo.pojo.Comment;
 import com.yamada.weibo.pojo.CommentLike;
 import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.service.CommentService;
+import com.yamada.weibo.service.MessageService;
+import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.ServletUtil;
 import com.yamada.weibo.utils.TextUtil;
 import com.yamada.weibo.vo.CommentVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -32,6 +36,16 @@ public class CommentServiceImpl implements CommentService {
 
     @Resource
     private CommentLikeMapper commentLikeMapper;
+
+    private final WeiboService weiboService;
+
+    private final MessageService messageService;
+
+    @Autowired
+    public CommentServiceImpl(WeiboService weiboService, MessageService messageService) {
+        this.weiboService = weiboService;
+        this.messageService = messageService;
+    }
 
     @Override
     public CommentVO getByCid(Integer cid) {
@@ -84,6 +98,12 @@ public class CommentServiceImpl implements CommentService {
         if (result == 0) {
             throw new MyException(ResultEnum.OPERATE_ERROR);
         }
+        // 添加热度分数
+        weiboService.increaseScore(comment.getWid(), WeiboOperationType.COMMENT);
+        // 发送消息
+        int loginUid = ServletUtil.getUid();
+        messageService.sendAt(comment, loginUid);
+        messageService.sendComment(comment, loginUid);
     }
 
     @Override
@@ -102,6 +122,9 @@ public class CommentServiceImpl implements CommentService {
         int result = commentMapper.delete(wrapper);
         if (result == 0) {
             throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
+        for (int i = 0; i < result; ++i) {
+            weiboService.decreaseScore(comment.getWid(), WeiboOperationType.COMMENT);
         }
         // 删除点赞信息
         QueryWrapper<CommentLike> wrapper1 = new QueryWrapper<>();

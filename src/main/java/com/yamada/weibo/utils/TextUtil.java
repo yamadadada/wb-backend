@@ -25,7 +25,7 @@ public class TextUtil {
 
     public static List<TextVO> convertToTextVO(String content) {
         List<TextVO> result = new ArrayList<>();
-        String regex = "(@[\\w\\u4e00-\\u9fa5]{1,16})|(#[\\w\\u4e00-\\u9fa5]+#)";
+        String regex = "(@[\\w\\u4e00-\\u9fa5]{1,16})|(#.+?#)";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(content);
         int i = 0;
@@ -71,11 +71,22 @@ public class TextUtil {
 
     public static List<String> parseTopic(String content) {
         List<String> result = new ArrayList<>();
-        String regex = "#[\\w\\u4e00-\\u9fa5]+#";
+        String regex = "#.+?#";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(content);
         while (m.find()) {
             result.add(content.substring(m.start() + 1, m.end() - 1));
+        }
+        return result;
+    }
+
+    public static List<String> parseName(String content) {
+        List<String> result = new ArrayList<>();
+        String regex = "@[\\w\\u4e00-\\u9fa5]{1,16}";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(content);
+        while (m.find()) {
+            result.add(content.substring(m.start() + 1, m.end()));
         }
         return result;
     }

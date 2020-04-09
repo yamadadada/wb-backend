@@ -5,10 +5,11 @@ import com.yamada.weibo.enums.ResultEnum;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.WeiboLikeMapper;
 import com.yamada.weibo.mapper.WeiboMapper;
-import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.pojo.WeiboLike;
+import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.service.WeiboLikeService;
 import com.yamada.weibo.utils.ServletUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -21,6 +22,13 @@ public class WeiboLikeServiceImpl implements WeiboLikeService {
 
     @Resource
     private WeiboMapper weiboMapper;
+
+    private final MessageService messageService;
+
+    @Autowired
+    public WeiboLikeServiceImpl(MessageService messageService) {
+        this.messageService = messageService;
+    }
 
     @Override
     public void like(Integer wid) {
@@ -35,6 +43,8 @@ public class WeiboLikeServiceImpl implements WeiboLikeService {
             weiboLike.setUid(uid);
             weiboLike.setWid(wid);
             weiboLikeMapper.insert(weiboLike);
+            // 发送消息
+            messageService.sendLikeByWid(wid, ServletUtil.getUid());
         }
     }
 

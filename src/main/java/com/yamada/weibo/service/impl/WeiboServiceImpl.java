@@ -6,10 +6,12 @@ import com.yamada.weibo.dto.CommentCountDTO;
 import com.yamada.weibo.dto.ForwardCountDTO;
 import com.yamada.weibo.dto.WeiboLikeDTO;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.WeiboOperationType;
 import com.yamada.weibo.enums.WeiboStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.*;
 import com.yamada.weibo.pojo.*;
+import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.service.TopicService;
 import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.FileUtil;
@@ -21,12 +23,16 @@ import com.yamada.weibo.vo.WeiboVO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,13 +60,34 @@ public class WeiboServiceImpl implements WeiboService {
     private FollowMapper followMapper;
 
     @Resource
+    private TopicMapper topicMapper;
+
+    @Resource
+    private WeiboTopicMapper weiboTopicMapper;
+
+    @Resource
     private FavoriteMapper favoriteMapper;
+
+    @Value("${hot.weibo.forward-score}")
+    private Double forwardScore;
+
+    @Value("${hot.weibo.comment-score}")
+    private Double commentScore;
+
+    @Value("${hot.weibo.like-score}")
+    private Double likeScore;
 
     private final TopicService topicService;
 
+    private final MessageService messageService;
+
+    private final RedisTemplate<String, Integer> redisTemplate;
+
     @Autowired
-    public WeiboServiceImpl(TopicService topicService) {
+    public WeiboServiceImpl(TopicService topicService, MessageService messageService, RedisTemplate redisTemplate) {
         this.topicService = topicService;
+        this.messageService = messageService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -194,7 +221,7 @@ public class WeiboServiceImpl implements WeiboService {
 
     @Override
     public Integer add(Weibo weibo) {
-        Integer uid = ServletUtil.getUid();
+        int uid = ServletUtil.getUid();
         weibo.setUid(uid);
         weibo.setStatus(WeiboStatus.FORMAL.getCode());
         int result = weiboMapper.insert(weibo);
@@ -202,7 +229,7 @@ public class WeiboServiceImpl implements WeiboService {
             throw new MyException(ResultEnum.OPERATE_ERROR);
         }
         // 添加话题
-        topicService.addByWeibo(weibo.getWid(), weibo.getContent());
+        topicService.addByWeibo(weibo.getWid(), weibo.getContent(), ServletUtil.getUid());
         return weibo.getWid();
     }
 
@@ -245,10 +272,20 @@ public class WeiboServiceImpl implements WeiboService {
                 }
             }
         }
-        // 删除转发关系
-        QueryWrapper<Forward> wrapper4 = new QueryWrapper<>();
-        wrapper4.eq("wid", wid);
-        forwardMapper.delete(wrapper4);
+        if (WeiboStatus.FORWARD.getCode().equals(weibo.getStatus())) {
+            // 删除转发关系
+            QueryWrapper<Forward> wrapper4 = new QueryWrapper<>();
+            wrapper4.eq("wid", wid);
+            forwardMapper.delete(wrapper4);
+            // 减少热度分数
+            decreaseScore(weibo.getBaseForwardWid(), WeiboOperationType.FORWARD);
+            if (weibo.getForwardLink() != null) {
+                String[] split = weibo.getForwardLink().split(",");
+                for (String s : split) {
+                    decreaseScore(Integer.valueOf(s), WeiboOperationType.FORWARD);
+                }
+            }
+        }
     }
 
     @Override
@@ -331,6 +368,16 @@ public class WeiboServiceImpl implements WeiboService {
     }
 
     @Override
+    public List<WeiboVO> hot(Integer page, Integer size) {
+        Set<Integer> widSet = redisTemplate.opsForZSet()
+                .reverseRange("hot-weibo-zset", (page - 1) * size, page * size);
+        if (widSet == null || widSet.size() == 0) {
+            return new ArrayList<>();
+        }
+        return toWeiboVOList(weiboMapper.selectBatchIds(widSet));
+    }
+
+    @Override
     public List<WeiboVO> realTime() {
         QueryWrapper<Weibo> wrapper = new QueryWrapper<>();
         wrapper.orderByDesc("create_time");
@@ -339,16 +386,72 @@ public class WeiboServiceImpl implements WeiboService {
 
     @Override
     public List<WeiboVO> shcool() {
-        int uid = ServletUtil.getUid();
-        QueryWrapper<User> wrapper1 = new QueryWrapper<>();
-        wrapper1.select("school").eq("uid", uid);
-        User user = userMapper.selectOne(wrapper1);
+        User user = userMapper.selectById(ServletUtil.getUid());
         if (StringUtils.isBlank(user.getSchool())) {
             throw new MyException(ResultEnum.SCHOOL_NOT_EXIST);
         }
+        // 找到同校用户
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.eq("school", user.getSchool());
+        List<User> userList = userMapper.selectList(wrapper);
+        if (userList.size() == 0) {
+            return new ArrayList<>();
+        }
+        List<Integer> uidList = userList.stream().map(User::getUid).collect(Collectors.toList());
         QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
-        wrapper2.eq("school", user.getSchool()).orderByDesc("create_time");
+        wrapper2.in("uid", uidList).orderByDesc("create_time");
         return toWeiboVOList(weiboMapper.selectList(wrapper2));
+    }
+
+    @Override
+    public List<WeiboVO> search(String search, Integer page, Integer size) {
+        String pattern = "^#[\\w\\u4e00-\\u9fa5]+#$";
+        if (Pattern.matches(pattern, search)) {
+            // 话题搜索
+            QueryWrapper<Topic> wrapper = new QueryWrapper<>();
+            wrapper.eq("name", search.substring(1, search.length() - 1));
+            Topic topic = topicMapper.selectOne(wrapper);
+            if (topic == null) {
+                return new ArrayList<>();
+            }
+            QueryWrapper<WeiboTopic> wrapper1 = new QueryWrapper<>();
+            wrapper1.eq("tid", topic.getTid()).orderByDesc("create_time");
+            PageHelper.startPage(page, size);
+            List<Integer> widList = weiboTopicMapper.selectList(wrapper1).stream().map(WeiboTopic::getWid).collect(Collectors.toList());
+            if (widList.size() == 0) {
+                return new ArrayList<>();
+            }
+            return toWeiboVOList(weiboMapper.selectBatchIds(widList));
+        } else {
+            // 其他搜索
+            QueryWrapper<Weibo> wrapper = new QueryWrapper<>();
+            wrapper.like("content", search);
+            return toWeiboVOList(weiboMapper.selectList(wrapper));
+        }
+    }
+
+    @Override
+    @Async
+    public void increaseScore(Integer wid, WeiboOperationType type) {
+        if (WeiboOperationType.FORWARD == type) {
+            redisTemplate.opsForZSet().incrementScore("hot-weibo-zset", wid, forwardScore);
+        } else if (WeiboOperationType.COMMENT == type){
+            redisTemplate.opsForZSet().incrementScore("hot-weibo-zset", wid, commentScore);
+        } else {
+            redisTemplate.opsForZSet().incrementScore("hot-weibo-zset", wid, likeScore);
+        }
+    }
+
+    @Override
+    @Async
+    public void decreaseScore(Integer wid, WeiboOperationType type) {
+        if (WeiboOperationType.FORWARD == type) {
+            redisTemplate.opsForZSet().incrementScore("hot-weibo-zset", wid, -forwardScore);
+        } else if (WeiboOperationType.COMMENT == type){
+            redisTemplate.opsForZSet().incrementScore("hot-weibo-zset", wid, -commentScore);
+        } else {
+            redisTemplate.opsForZSet().incrementScore("hot-weibo-zset", wid, -likeScore);
+        }
     }
 
     /**

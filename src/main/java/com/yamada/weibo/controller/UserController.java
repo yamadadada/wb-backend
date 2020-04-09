@@ -6,6 +6,7 @@ import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.service.UserService;
 import com.yamada.weibo.utils.ResultUtil;
 import com.yamada.weibo.utils.ServletUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -64,7 +65,13 @@ public class UserController {
     }
 
     @GetMapping("/searchByName")
-    public Object searchByName(@RequestParam("name") String name) {
+    public Object searchByName(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                               @RequestParam(value = "size", defaultValue = "10") Integer size,
+                               @RequestParam("name") String name) {
+        if (StringUtils.isBlank(name)) {
+            return ResultUtil.success(null);
+        }
+        PageHelper.startPage(page, size);
         return ResultUtil.success(userService.searchByName(name));
     }
 

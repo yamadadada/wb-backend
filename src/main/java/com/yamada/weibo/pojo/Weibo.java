@@ -17,7 +17,7 @@ public class Weibo {
     private Integer uid;
 
     @NotBlank(message = "微博内容不能为空")
-    @Size(max = 140, message = "字数不能超过140个字")
+    @Size(max = 1024, message = "字数不能超过1024个字")
     private String content;
 
     private Integer status;

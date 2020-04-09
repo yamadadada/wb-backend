@@ -8,5 +8,5 @@ public interface TopicService {
 
     List<TopicVO> searchByName(String name);
 
-    void addByWeibo(Integer wid, String content);
+    void addByWeibo(Integer wid, String content, Integer loginUid);
 }

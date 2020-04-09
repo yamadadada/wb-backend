@@ -22,6 +22,7 @@ public class ServletUtil {
 
     public static Integer getUid() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        RequestContextHolder.setRequestAttributes(attributes, true);
         if (attributes == null) {
             throw new MyException(ResultEnum.TOKEN_ERROR);
         }

@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ResultEnum {
+    MESSAGE_NOT_EXIST(-11, "该消息不存在"),
     SCHOOL_NOT_EXIST(-10, "未填写学校"),
     NAME_REPETITION(-9, "该昵称已存在"),
     USER_NOT_EXIST(-8, "该用户不存在"),

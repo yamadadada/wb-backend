@@ -16,15 +16,15 @@ public class CommentLikeController {
         this.commentLikeService = commentLikeService;
     }
 
-    @PutMapping("/{wid}")
-    public Object like(@PathVariable("wid") Integer wid) {
-        commentLikeService.like(wid);
+    @PutMapping("/{cid}")
+    public Object like(@PathVariable("cid") Integer cid) {
+        commentLikeService.like(cid);
         return ResultUtil.success(null);
     }
 
-    @DeleteMapping("/{wid}")
-    public Object notLike(@PathVariable("wid") Integer wid) {
-        commentLikeService.notLike(wid);
+    @DeleteMapping("/{cid}")
+    public Object notLike(@PathVariable("cid") Integer cid) {
+        commentLikeService.notLike(cid);
         return ResultUtil.success(null);
     }
 }

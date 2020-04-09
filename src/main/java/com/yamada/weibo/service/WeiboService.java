@@ -1,5 +1,6 @@
 package com.yamada.weibo.service;
 
+import com.yamada.weibo.enums.WeiboOperationType;
 import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.vo.WeiboLikeVO;
 import com.yamada.weibo.vo.WeiboVO;
@@ -32,7 +33,15 @@ public interface WeiboService {
 
     List<WeiboVO> myFavorite();
 
+    List<WeiboVO> hot(Integer page, Integer size);
+
     List<WeiboVO> realTime();
 
     List<WeiboVO> shcool();
+
+    List<WeiboVO> search(String search, Integer page, Integer size);
+
+    void increaseScore(Integer wid, WeiboOperationType type);
+
+    void decreaseScore(Integer wid, WeiboOperationType type);
 }
