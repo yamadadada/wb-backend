@@ -3,6 +3,7 @@ package com.yamada.weibo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yamada.weibo.enums.CommentType;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.UserStatus;
 import com.yamada.weibo.enums.WeiboOperationType;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.CommentLikeMapper;
@@ -88,7 +89,13 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void add(Comment comment) {
-        comment.setUid(ServletUtil.getUid());
+        Integer uid = ServletUtil.getUid();
+        // 检查用户是否已被封禁
+        User user = userMapper.selectById(uid);
+        if (UserStatus.BAN.getCode().equals(user.getStatus())) {
+            throw new MyException(ResultEnum.USER_BAN);
+        }
+        comment.setUid(uid);
         if (comment.getCommentCid() != null) {
             comment.setCommentType(CommentType.LEVEL2.getCode());
         } else {

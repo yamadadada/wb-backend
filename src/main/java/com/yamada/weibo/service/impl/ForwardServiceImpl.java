@@ -1,13 +1,16 @@
 package com.yamada.weibo.service.impl;
 
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.UserStatus;
 import com.yamada.weibo.enums.WeiboOperationType;
 import com.yamada.weibo.enums.WeiboStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.form.ForwardForm;
 import com.yamada.weibo.mapper.ForwardMapper;
+import com.yamada.weibo.mapper.UserMapper;
 import com.yamada.weibo.mapper.WeiboMapper;
 import com.yamada.weibo.pojo.Forward;
+import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.service.ForwardService;
 import com.yamada.weibo.service.MessageService;
@@ -29,6 +32,9 @@ public class ForwardServiceImpl implements ForwardService {
     @Resource
     private WeiboMapper weiboMapper;
 
+    @Resource
+    private UserMapper userMapper;
+
     private final TopicService topicService;
 
     private final WeiboService weiboService;
@@ -45,6 +51,12 @@ public class ForwardServiceImpl implements ForwardService {
     @Override
     @Transactional
     public void add(ForwardForm form) {
+        Integer uid = ServletUtil.getUid();
+        // 检查用户是否已被封禁
+        User user = userMapper.selectById(uid);
+        if (UserStatus.BAN.getCode().equals(user.getStatus())) {
+            throw new MyException(ResultEnum.USER_BAN);
+        }
         Weibo forwardWeibo = weiboMapper.selectById(form.getWid());
         if (forwardWeibo == null) {
             throw new MyException(ResultEnum.WEIBO_NOT_EXIST);
@@ -52,7 +64,6 @@ public class ForwardServiceImpl implements ForwardService {
         // 封装信息
         Weibo weibo = new Weibo();
         weibo.setContent(form.getContent());
-        Integer uid = ServletUtil.getUid();
         weibo.setUid(uid);
         weibo.setStatus(WeiboStatus.FORWARD.getCode());
 

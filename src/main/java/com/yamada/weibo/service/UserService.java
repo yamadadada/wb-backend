@@ -22,4 +22,6 @@ public interface UserService {
     List<UserIndexVO> getUserIndex();
 
     UserVO getByName(String name);
+
+    void ban(Integer uid);
 }

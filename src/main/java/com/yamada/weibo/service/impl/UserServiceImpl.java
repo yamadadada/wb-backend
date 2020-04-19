@@ -2,6 +2,7 @@ package com.yamada.weibo.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.UserStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.FollowMapper;
 import com.yamada.weibo.mapper.UserMapper;
@@ -16,12 +17,15 @@ import com.yamada.weibo.utils.ServletUtil;
 import com.yamada.weibo.vo.UserIndexVO;
 import com.yamada.weibo.vo.UserVO;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +39,13 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private FollowMapper followMapper;
+
+    private final StringRedisTemplate redisTemplate;
+
+    @Autowired
+    public UserServiceImpl(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
     public UserVO getUserInfo(Integer uid) {
@@ -54,6 +65,18 @@ public class UserServiceImpl implements UserService {
         User u = userMapper.selectOne(wrapper);
         if (u != null && !u.getUid().equals(uid)) {
             throw new MyException(ResultEnum.NAME_REPETITION);
+        }
+        if (u == null) {
+            // 修改了昵称
+            // 检查是否在间隔时间
+            String s = redisTemplate.opsForValue().get("user::name:interval::" + uid);
+            if (s != null) {
+                throw new MyException(ResultEnum.NAME_INTERVAL);
+            }
+            // 添加间隔时间
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            redisTemplate.opsForValue()
+                    .set("user::name:interval::" + uid, sdf.format(new Date()), 30, TimeUnit.DAYS);
         }
         user.setUid(uid);
         int result = userMapper.updateById(user);
@@ -165,6 +188,19 @@ public class UserServiceImpl implements UserService {
         wrapper.eq("name", name);
         User user = userMapper.selectOne(wrapper);
         return toUserVO(user);
+    }
+
+    @Override
+    public void ban(Integer uid) {
+        User user = userMapper.selectById(uid);
+        if (user == null) {
+            throw new MyException(ResultEnum.USER_NOT_EXIST);
+        }
+        user.setStatus(UserStatus.BAN.getCode());
+        int result = userMapper.updateById(user);
+        if (result == 0) {
+            throw new MyException(ResultEnum.OPERATE_ERROR);
+        }
     }
 
     private UserVO toUserVO(User user) {

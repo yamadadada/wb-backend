@@ -6,6 +6,7 @@ import com.yamada.weibo.dto.CommentCountDTO;
 import com.yamada.weibo.dto.ForwardCountDTO;
 import com.yamada.weibo.dto.WeiboLikeDTO;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.UserStatus;
 import com.yamada.weibo.enums.WeiboOperationType;
 import com.yamada.weibo.enums.WeiboStatus;
 import com.yamada.weibo.exception.MyException;
@@ -222,6 +223,11 @@ public class WeiboServiceImpl implements WeiboService {
     @Override
     public Integer add(Weibo weibo) {
         int uid = ServletUtil.getUid();
+        // 检查用户是否已被封禁
+        User user = userMapper.selectById(uid);
+        if (UserStatus.BAN.getCode().equals(user.getStatus())) {
+            throw new MyException(ResultEnum.USER_BAN);
+        }
         weibo.setUid(uid);
         weibo.setStatus(WeiboStatus.FORMAL.getCode());
         int result = weiboMapper.insert(weibo);

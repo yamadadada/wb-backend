@@ -8,6 +8,7 @@ import com.yamada.weibo.utils.ResultUtil;
 import com.yamada.weibo.utils.ServletUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,12 @@ public class UserController {
 
     private final UserService userService;
 
+    private final StringRedisTemplate redisTemplate;
+
     @Autowired
-    public UserController(UserService userService) {
+    public UserController(UserService userService, StringRedisTemplate redisTemplate) {
         this.userService = userService;
+        this.redisTemplate = redisTemplate;
     }
 
     @GetMapping("")
@@ -83,5 +87,11 @@ public class UserController {
     @GetMapping("/getByName")
     public Object getUserByName(@RequestParam("name") String name) {
         return ResultUtil.success(userService.getByName(name));
+    }
+
+    @GetMapping("/isNameInterval")
+    public Object isNameInterval() {
+        String s = redisTemplate.opsForValue().get("user::name:interval::" + ServletUtil.getUid());
+        return ResultUtil.success(s != null);
     }
 }

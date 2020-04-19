@@ -2,10 +2,13 @@ package com.yamada.weibo.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.yamada.weibo.enums.ResultEnum;
+import com.yamada.weibo.enums.UserStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.CommentLikeMapper;
 import com.yamada.weibo.mapper.CommentMapper;
+import com.yamada.weibo.mapper.UserMapper;
 import com.yamada.weibo.pojo.CommentLike;
+import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.service.CommentLikeService;
 import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.utils.ServletUtil;

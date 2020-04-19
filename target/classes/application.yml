@@ -12,6 +12,10 @@ hot:
     forward-score: 2000
     comment-score: 3000
     like-score: 1000
+appeal:
+  weibo-limit: 10
+  comment-limit: 10
+  user-limit: 10
 spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/weibo?autoReconnect=true&useSSL=false&serverTimezone=GMT%2B8&characterEncoding=utf-8

@@ -42,4 +42,6 @@ public class User {
 
     @Size(max = 16, message = "学校长度太长")
     private String school;
+
+    private Integer status;
 }

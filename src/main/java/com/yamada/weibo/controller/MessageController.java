@@ -62,6 +62,6 @@ public class MessageController {
     @GetMapping("/badge")
     public Object badge(@RequestParam("atId") Integer atId, @RequestParam("commentId") Integer commentId,
                         @RequestParam("likeId") Integer likeId, @RequestParam("systemId") Integer systemId) {
-        return messageService.badge(atId, commentId, likeId, systemId);
+        return ResultUtil.success(messageService.badge(atId, commentId, likeId, systemId));
     }
 }

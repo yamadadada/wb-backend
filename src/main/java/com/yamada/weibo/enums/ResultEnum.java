@@ -4,6 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum ResultEnum {
+    NAME_INTERVAL(-14, "修改昵称30天内无法再次修改"),
+    USER_BAN(-13, "该用户已被封禁，无法进行相关操作"),
+    CANNOT_APPEAL_REPEAT(-12, "不能重复举报"),
     MESSAGE_NOT_EXIST(-11, "该消息不存在"),
     SCHOOL_NOT_EXIST(-10, "未填写学校"),
     NAME_REPETITION(-9, "该昵称已存在"),
