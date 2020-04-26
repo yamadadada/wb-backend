@@ -2,8 +2,12 @@ package com.yamada.weibo.vo;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class TextVO {
+public class TextVO implements Serializable {
+
+    private static final long serialVersionUID = -7502881045846994551L;
 
     private String text;
 

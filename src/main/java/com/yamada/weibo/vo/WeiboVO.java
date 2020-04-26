@@ -4,11 +4,14 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.yamada.weibo.utils.DateTimeSerializer;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 @Data
-public class WeiboVO {
+public class WeiboVO implements Serializable {
+
+    private static final long serialVersionUID = 4023161478654819619L;
 
     private Integer wid;
 

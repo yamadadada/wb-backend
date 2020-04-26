@@ -161,6 +161,9 @@ public class UserServiceImpl implements UserService {
                 uidSet.add(follow.getFollowUid());
             }
         }
+        if (uidSet.size() == 0) {
+            return new ArrayList<>();
+        }
         List<User> userList = userMapper.selectBatchIds(uidSet);
         // 按首字母排序
         List<UserIndexVO> result = new ArrayList<>();

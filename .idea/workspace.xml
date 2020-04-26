@@ -2,38 +2,34 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7bf4348e-cb2e-4cc7-8c34-dd32906f5180" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/controller/AppealController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/enums/AppealStatus.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/enums/TargetType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/enums/UserStatus.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/mapper/AppealMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/pojo/Appeal.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/AppealService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/AppealServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_alibaba_druid_1_1_10.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_drtrang_druid_spring_boot2_actuator_autoconfigure_1_1_10.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_drtrang_druid_spring_boot2_actuator_starter_1_1_10.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_drtrang_druid_spring_boot2_autoconfigure_1_1_10.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_github_drtrang_druid_spring_boot2_starter_1_1_10.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_actuator_2_2_4_RELEASE.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/controller/MessageController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/controller/MessageController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/controller/UserController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/enums/ResultEnum.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/enums/ResultEnum.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/pojo/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/pojo/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/CommentLikeServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/CommentLikeServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/CommentServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/CommentServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/ForwardServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/ForwardServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/WeiboApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/WeiboApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/pojo/Weibo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/pojo/Weibo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/AppealServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/AppealServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/UserServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/UserServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/WeiboServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/service/impl/WeiboServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/task/RankTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/task/RankTask.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/vo/CommentVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/vo/CommentVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/vo/TextVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/vo/TextVO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/vo/WeiboVO.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/yamada/weibo/vo/WeiboVO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/controller/MessageController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/controller/MessageController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/controller/UserController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/controller/UserController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/enums/ResultEnum.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/enums/ResultEnum.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/pojo/User.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/pojo/User.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/MessageService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/MessageService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/UserService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/UserService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/CommentLikeServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/CommentLikeServiceImpl.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/CommentServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/CommentServiceImpl.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/ForwardServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/ForwardServiceImpl.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/MessageServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/MessageServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/WeiboApplication.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/WeiboApplication.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/pojo/Weibo.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/pojo/Weibo.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/AppealService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/AppealService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/AppealServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/AppealServiceImpl.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/UserServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/UserServiceImpl.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/WeiboServiceImpl.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/service/impl/WeiboServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/task/RankTask.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/task/RankTask.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/com/yamada/weibo/vo/WeiboVO.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/com/yamada/weibo/vo/WeiboVO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/weibo.iml" beforeDir="false" afterPath="$PROJECT_DIR$/weibo.iml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -81,7 +77,7 @@
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../five" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -91,7 +87,7 @@
     <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.0" />
     <property name="project.structure.side.proportion" value="0.0" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="settings.editor.selected.configurable" value="Errors" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -218,6 +214,10 @@
       <workItem from="1587133618718" duration="829000" />
       <workItem from="1587185526835" duration="19923000" />
       <workItem from="1587265359710" duration="2191000" />
+      <workItem from="1587313087054" duration="327000" />
+      <workItem from="1587380960642" duration="2686000" />
+      <workItem from="1587634923687" duration="6584000" />
+      <workItem from="1587720253174" duration="8796000" />
     </task>
     <servers />
   </component>

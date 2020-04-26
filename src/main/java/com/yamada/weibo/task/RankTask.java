@@ -2,7 +2,6 @@ package com.yamada.weibo.task;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -26,7 +25,8 @@ public class RankTask {
     @Scheduled(cron = "0 * * * * *")
     public void hotSearch() {
         log.info("【定时任务】热门搜索");
-        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet().reverseRangeWithScores("hot-list", 0, -1);
+        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
+                .reverseRangeWithScores("hot-list", 0, -1);
         if (tuples != null) {
             int i = 0;
             for (ZSetOperations.TypedTuple<String> tuple : tuples) {

@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.yamada.weibo.utils.DateTimeSerializer;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Data
-public class CommentVO {
+public class CommentVO implements Serializable {
+
+    private static final long serialVersionUID = 6364756319794431802L;
 
     private Integer cid;
 

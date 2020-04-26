@@ -24,6 +24,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -117,9 +118,10 @@ public class AppealServiceImpl implements AppealService {
     @Override
     public void autoBan(Integer targetId, Integer targetType, Object target, Integer loginUid) {
         QueryWrapper<Appeal> wrapper = new QueryWrapper<>();
-        wrapper.select("aid").eq("target_id", targetId).eq("target_type", targetType)
+        wrapper.eq("target_id", targetId).eq("target_type", targetType)
                 .eq("status", AppealStatus.APPEAL.getCode());
-        Integer count = appealMapper.selectCount(wrapper);
+        List<Appeal> appealList = appealMapper.selectList(wrapper);
+        int count = appealList.size();
         if (TargetType.WEIBO.getCode().equals(targetType)) {
             // 微博
             if (count >= weiboLimit) {
@@ -128,7 +130,12 @@ public class AppealServiceImpl implements AppealService {
                 // 发送消息
                 String message = "你发布的微博因被多人投诉而被删除(" +
                         ((Weibo)target).getContent().replaceAll("\n", "") + ")";
-                messageService.sendSystem(((Weibo)target).getUid(), message, loginUid);
+                messageService.sendSystem(((Weibo)target).getUid(), message, -1);
+                message = "你投诉的微博已被删除(" +
+                        ((Weibo)target).getContent().replaceAll("\n", "") + ")";
+                for (Appeal appeal : appealList) {
+                    messageService.sendSystem(appeal.getUid(), message, -1);
+                }
             }
         } else if (TargetType.COMMENT.getCode().equals(targetType)) {
             // 评论
@@ -138,7 +145,12 @@ public class AppealServiceImpl implements AppealService {
                 // 发送消息
                 String message = "你发表的评论因被多人投诉而被删除(" +
                         ((Comment)target).getContent().replaceAll("\n", "") + ")";
-                messageService.sendSystem(((Comment)target).getUid(), message, loginUid);
+                messageService.sendSystem(((Comment)target).getUid(), message, -1);
+                message = "你投诉的评论已被删除(" +
+                        ((Comment)target).getContent().replaceAll("\n", "") + ")";
+                for (Appeal appeal : appealList) {
+                    messageService.sendSystem(appeal.getUid(), message, -1);
+                }
             }
         } else {
             // 用户
@@ -147,7 +159,11 @@ public class AppealServiceImpl implements AppealService {
                 updateStatus(targetId, targetType, AppealStatus.DONE);
                 // 发送消息
                 String message = "你的帐号因被多人投诉而被封禁";
-                messageService.sendSystem(targetId, message, loginUid);
+                messageService.sendSystem(targetId, message, -1);
+                message = "你投诉的用户：" + ((User)target).getName() + " 已被封禁";
+                for (Appeal appeal : appealList) {
+                    messageService.sendSystem(appeal.getUid(), message, -1);
+                }
             }
         }
     }

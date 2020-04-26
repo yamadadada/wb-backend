@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -80,14 +81,11 @@ public class WeiboServiceImpl implements WeiboService {
 
     private final TopicService topicService;
 
-    private final MessageService messageService;
-
     private final RedisTemplate<String, Integer> redisTemplate;
 
     @Autowired
-    public WeiboServiceImpl(TopicService topicService, MessageService messageService, RedisTemplate redisTemplate) {
+    public WeiboServiceImpl(TopicService topicService, RedisTemplate redisTemplate) {
         this.topicService = topicService;
-        this.messageService = messageService;
         this.redisTemplate = redisTemplate;
     }
 
@@ -98,21 +96,19 @@ public class WeiboServiceImpl implements WeiboService {
         QueryWrapper<Follow> wrapper1 = new QueryWrapper<>();
         wrapper1.eq("uid", uid);
         List<Follow> followList = followMapper.selectList(wrapper1);
-        if (followList.size() > 0) {
-            List<Integer> followUidList = followList.stream().map(Follow::getFollowUid).collect(Collectors.toList());
-            // 添加自己的UID
-            followUidList.add(uid);
-            // 查询这些用户的微博
-            QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
-            wrapper2.in("uid", followUidList).orderByDesc("create_time");
-            PageHelper.startPage(page, size);
-            List<Weibo> weiboList = weiboMapper.selectList(wrapper2);
-            return toWeiboVOList(weiboList);
-        }
-        return new ArrayList<>();
+        List<Integer> followUidList = followList.stream().map(Follow::getFollowUid).collect(Collectors.toList());
+        // 添加自己的UID
+        followUidList.add(uid);
+        // 查询这些用户的微博
+        QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
+        wrapper2.in("uid", followUidList).orderByDesc("create_time");
+        PageHelper.startPage(page, size);
+        List<Weibo> weiboList = weiboMapper.selectList(wrapper2);
+        return toWeiboVOList(weiboList);
     }
 
     @Override
+    @Cacheable(cacheNames = "weibo", key = "#wid")
     public WeiboVO getWeiboDetail(Integer wid) {
         Weibo weibo = weiboMapper.selectById(wid);
         if (weibo == null) {
@@ -392,7 +388,8 @@ public class WeiboServiceImpl implements WeiboService {
 
     @Override
     public List<WeiboVO> shcool() {
-        User user = userMapper.selectById(ServletUtil.getUid());
+        Integer uid = ServletUtil.getUid();
+        User user = userMapper.selectById(uid);
         if (StringUtils.isBlank(user.getSchool())) {
             throw new MyException(ResultEnum.SCHOOL_NOT_EXIST);
         }

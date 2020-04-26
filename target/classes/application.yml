@@ -22,6 +22,13 @@ spring:
     username: root
     password: 123456
     driver-class-name: com.mysql.jdbc.Driver
+    druid:
+      initial-size: 20 #连接池初始化大小
+      min-idle: 10 #最小空闲连接数
+      max-active: 150 #最大连接数
+      stat-view-servlet: #访问监控网页的登录用户名和密码
+        login-username: druid
+        login-password: druid
   mvc:
     static-path-pattern: /images/**
   resources:
@@ -36,3 +43,4 @@ spring:
 logging:
   level:
     com.yamada.weibo.mapper: debug
+
