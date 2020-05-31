@@ -17,11 +17,14 @@ import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.service.TopicService;
 import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.ServletUtil;
+import com.yamada.weibo.vo.WeiboVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 
 @Service
 public class ForwardServiceImpl implements ForwardService {
@@ -111,5 +114,33 @@ public class ForwardServiceImpl implements ForwardService {
         }
         // 添加话题
         topicService.addByWeibo(weibo.getWid(), weibo.getContent(), ServletUtil.getUid());
+    }
+
+    @Override
+    public WeiboVO baseInfo(Integer wid) {
+        Weibo weibo = weiboMapper.selectById(wid);
+        if (weibo == null) {
+            throw new MyException(ResultEnum.WEIBO_NOT_EXIST);
+        }
+        if (weibo.getBaseForwardWid() != null) {
+            weibo = weiboMapper.selectById(weibo.getBaseForwardWid());
+            if (weibo == null) {
+                return null;
+            }
+        }
+        WeiboVO weiboVO = new WeiboVO();
+        BeanUtils.copyProperties(weibo, weiboVO);
+        weiboVO.setContentString(weibo.getContent());
+        User user = userMapper.selectById(weibo.getUid());
+        weiboVO.setName(user.getName());
+        if (weibo.getImages() != null) {
+            // 使用第一张图片作为图片
+            String[] split = weibo.getImages().split(",");
+            weiboVO.setAvatar(split[0]);
+        } else {
+            // 使用头像作为图片
+            weiboVO.setAvatar(user.getAvatar());
+        }
+        return weiboVO;
     }
 }

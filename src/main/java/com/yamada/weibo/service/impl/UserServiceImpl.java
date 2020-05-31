@@ -5,9 +5,11 @@ import com.yamada.weibo.enums.ResultEnum;
 import com.yamada.weibo.enums.UserStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.FollowMapper;
+import com.yamada.weibo.mapper.SchoolMapper;
 import com.yamada.weibo.mapper.UserMapper;
 import com.yamada.weibo.mapper.WeiboMapper;
 import com.yamada.weibo.pojo.Follow;
+import com.yamada.weibo.pojo.School;
 import com.yamada.weibo.pojo.User;
 import com.yamada.weibo.pojo.Weibo;
 import com.yamada.weibo.service.UserService;
@@ -39,6 +41,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private FollowMapper followMapper;
+
+    @Resource
+    private SchoolMapper schoolMapper;
 
     private final StringRedisTemplate redisTemplate;
 
@@ -204,6 +209,14 @@ public class UserServiceImpl implements UserService {
         if (result == 0) {
             throw new MyException(ResultEnum.OPERATE_ERROR);
         }
+    }
+
+    @Override
+    public List<String> searchSchool(String school) {
+        QueryWrapper<School> wrapper = new QueryWrapper<>();
+        wrapper.select("name").likeRight("name", school);
+        List<School> schoolList = schoolMapper.selectList(wrapper);
+        return schoolList.stream().map(School::getName).collect(Collectors.toList());
     }
 
     private UserVO toUserVO(User user) {

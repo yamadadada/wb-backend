@@ -19,6 +19,9 @@ public class WeiboVO implements Serializable {
 
     private List<TextVO> content;
 
+    // 字符串形式的正文内容
+    private String contentString;
+
     private Integer status;
 
     private Integer baseForwardWid;

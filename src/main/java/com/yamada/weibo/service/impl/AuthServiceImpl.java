@@ -11,6 +11,7 @@ import com.yamada.weibo.service.AuthService;
 import com.yamada.weibo.utils.JwtUtil;
 import com.yamada.weibo.utils.ServletUtil;
 import com.yamada.weibo.vo.LoginResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -83,25 +84,29 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtil.create(user);
         Map<String, Object> map = new HashMap<>();
         map.put("uid", user.getUid());
+        if (StringUtils.isNotBlank(user.getSchool())) {
+            map.put("school", user.getSchool());
+        }
+        if (StringUtils.isNotBlank(user.getLocation())) {
+            map.put("city", user.getLocation());
+        }
         map.put("token", token);
         return map;
     }
 
     @Override
     public Map<String, Object> getUserInfo(UserInfoForm userInfoForm) {
+        Integer uid = ServletUtil.getUid();
         Map<String, Object> map = new HashMap<>();
         // 验证name是否重复
         String name = userInfoForm.getName();
         QueryWrapper<User> wrapper = new QueryWrapper<>();
         wrapper.eq("name", name);
-        if (userMapper.selectOne(wrapper) != null) {
+        User tempUser = userMapper.selectOne(wrapper);
+        if (tempUser != null && !tempUser.getUid().equals(uid)) {
+            map.put("message", "当前昵称已被占用，请前往个人中心修改昵称");
             userInfoForm.setName(null);
-            map.put("isNameChange", false);
-        } else {
-            map.put("isNameChange", true);
         }
-
-        Integer uid = ServletUtil.getUid();
         User user = new User();
         user.setUid(uid);
         BeanUtils.copyProperties(userInfoForm, user);
@@ -115,6 +120,7 @@ public class AuthServiceImpl implements AuthService {
         if (result == 0) {
             throw new MyException(ResultEnum.OPERATE_ERROR);
         }
+        map.put("city", location);
         return map;
     }
 

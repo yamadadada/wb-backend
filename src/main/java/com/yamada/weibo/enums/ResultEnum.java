@@ -4,6 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum ResultEnum {
+    LOCATION_NOT_EXIST(-15, "未填写所在地"),
     NAME_INTERVAL(-14, "修改昵称30天内无法再次修改"),
     USER_BAN(-13, "该用户已被封禁，无法进行相关操作"),
     CANNOT_APPEAL_REPEAT(-12, "不能重复举报"),

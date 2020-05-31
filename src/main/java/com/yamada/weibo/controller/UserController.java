@@ -94,4 +94,9 @@ public class UserController {
         String s = redisTemplate.opsForValue().get("user::name:interval::" + ServletUtil.getUid());
         return ResultUtil.success(s != null);
     }
+
+    @GetMapping("/searchSchool")
+    public Object searchSchool(@RequestParam("school") String school) {
+        return ResultUtil.success(userService.searchSchool(school));
+    }
 }

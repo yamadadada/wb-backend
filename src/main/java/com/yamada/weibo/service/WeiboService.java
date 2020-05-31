@@ -37,7 +37,9 @@ public interface WeiboService {
 
     List<WeiboVO> realTime();
 
-    List<WeiboVO> shcool();
+    List<WeiboVO> shcool(Integer page, Integer size);
+
+    List<WeiboVO> city(Integer page, Integer size);
 
     List<WeiboVO> search(String search, Integer page, Integer size);
 

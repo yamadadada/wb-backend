@@ -28,4 +28,14 @@ public class ForwardController {
         forwardService.add(form);
         return ResultUtil.success(null);
     }
+
+    /**
+     * 获得转发的微博的基本信息
+     * @param wid
+     * @return
+     */
+    @GetMapping("/baseInfo/{wid}")
+    public Object baseInfo(@PathVariable("wid") Integer wid) {
+        return ResultUtil.success(forwardService.baseInfo(wid));
+    }
 }

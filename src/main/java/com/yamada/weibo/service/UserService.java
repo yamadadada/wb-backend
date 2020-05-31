@@ -24,4 +24,6 @@ public interface UserService {
     UserVO getByName(String name);
 
     void ban(Integer uid);
+
+    List<String> searchSchool(String school);
 }

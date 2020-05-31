@@ -12,7 +12,6 @@ import com.yamada.weibo.enums.WeiboStatus;
 import com.yamada.weibo.exception.MyException;
 import com.yamada.weibo.mapper.*;
 import com.yamada.weibo.pojo.*;
-import com.yamada.weibo.service.MessageService;
 import com.yamada.weibo.service.TopicService;
 import com.yamada.weibo.service.WeiboService;
 import com.yamada.weibo.utils.FileUtil;
@@ -108,7 +107,7 @@ public class WeiboServiceImpl implements WeiboService {
     }
 
     @Override
-    @Cacheable(cacheNames = "weibo", key = "#wid")
+//    @Cacheable(cacheNames = "weibo", key = "#wid")
     public WeiboVO getWeiboDetail(Integer wid) {
         Weibo weibo = weiboMapper.selectById(wid);
         if (weibo == null) {
@@ -118,6 +117,7 @@ public class WeiboServiceImpl implements WeiboService {
         BeanUtils.copyProperties(weibo, weiboVO);
         // 解析文本
         weiboVO.setContent(TextUtil.convertToTextVO(weibo.getContent()));
+        weiboVO.setContentString(weibo.getContent());
         // 设置图片
         if (weibo.getImages() != null) {
             String[] split = weibo.getImages().split(",");
@@ -387,7 +387,7 @@ public class WeiboServiceImpl implements WeiboService {
     }
 
     @Override
-    public List<WeiboVO> shcool() {
+    public List<WeiboVO> shcool(Integer page, Integer size) {
         Integer uid = ServletUtil.getUid();
         User user = userMapper.selectById(uid);
         if (StringUtils.isBlank(user.getSchool())) {
@@ -395,15 +395,25 @@ public class WeiboServiceImpl implements WeiboService {
         }
         // 找到同校用户
         QueryWrapper<User> wrapper = new QueryWrapper<>();
-        wrapper.eq("school", user.getSchool());
+        wrapper.eq("school", user.getSchool()).ne("uid", uid);
+        PageHelper.startPage(page, size);
         List<User> userList = userMapper.selectList(wrapper);
-        if (userList.size() == 0) {
-            return new ArrayList<>();
+        return getWeiboVOByUserList(userList);
+    }
+
+    @Override
+    public List<WeiboVO> city(Integer page, Integer size) {
+        Integer uid = ServletUtil.getUid();
+        User user = userMapper.selectById(uid);
+        if (StringUtils.isBlank(user.getLocation())) {
+            throw new MyException(ResultEnum.LOCATION_NOT_EXIST);
         }
-        List<Integer> uidList = userList.stream().map(User::getUid).collect(Collectors.toList());
-        QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
-        wrapper2.in("uid", uidList).orderByDesc("create_time");
-        return toWeiboVOList(weiboMapper.selectList(wrapper2));
+        // 找到同城用户
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        wrapper.eq("location", user.getLocation()).ne("uid", uid);
+        PageHelper.startPage(page, size);
+        List<User> userList = userMapper.selectList(wrapper);
+        return getWeiboVOByUserList(userList);
     }
 
     @Override
@@ -519,6 +529,7 @@ public class WeiboServiceImpl implements WeiboService {
             BeanUtils.copyProperties(weibo, weiboVO);
             // 解析文本
             weiboVO.setContent(TextUtil.convertToTextVO(weibo.getContent()));
+            weiboVO.setContentString(weibo.getContent());
 
             weiboVO.setFullTime(sdf.format(weibo.getCreateTime()));
             // 解析图片
@@ -598,5 +609,15 @@ public class WeiboServiceImpl implements WeiboService {
             map.get(cid).addComment(comment);
         }
         return commentList1;
+    }
+
+    private List<WeiboVO> getWeiboVOByUserList(List<User> userList) {
+        if (userList.size() == 0) {
+            return new ArrayList<>();
+        }
+        List<Integer> uidList = userList.stream().map(User::getUid).collect(Collectors.toList());
+        QueryWrapper<Weibo> wrapper2 = new QueryWrapper<>();
+        wrapper2.in("uid", uidList).orderByDesc("create_time");
+        return toWeiboVOList(weiboMapper.selectList(wrapper2));
     }
 }

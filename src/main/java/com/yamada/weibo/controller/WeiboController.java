@@ -168,8 +168,13 @@ public class WeiboController {
     @GetMapping("/school")
     public Object school(@RequestParam(value = "page", defaultValue = "1") Integer page,
                            @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        PageHelper.startPage(page, size);
-        return ResultUtil.success(weiboService.shcool());
+        return ResultUtil.success(weiboService.shcool(page, size));
+    }
+
+    @GetMapping("/city")
+    public Object city(@RequestParam(value = "page", defaultValue = "1") Integer page,
+                         @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResultUtil.success(weiboService.city(page, size));
     }
 
     @GetMapping("/search")

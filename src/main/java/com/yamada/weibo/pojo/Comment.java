@@ -22,7 +22,7 @@ public class Comment {
     private Integer wid;
 
     @NotBlank(message = "评论内容不能为空")
-    @Size(max = 140, message = "评论字数不能超过140个字")
+    @Size(max = 1024, message = "评论字数不能超过1024个字")
     private String content;
 
     private Integer commentCid;
